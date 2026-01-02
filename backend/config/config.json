@@ -1,0 +1,35 @@
+{
+  "development": {
+    "username": "ecommerce_user",
+    "password": "angola12",
+    "database": "ecommerce",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
+    "retry": {
+      "max": 3
+    },
+    "logging": false
+  },
+  "mysql": {
+    "username": "ecommerce_user",
+    "password": "angola12",
+    "database": "ecommerce",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
+    "retry": {
+      "max": 3
+    }
+  }
+}

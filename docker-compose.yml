@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  database:
+    image: mysql:8.0
+    container_name: ecommerce_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-ecommerce}
+      MYSQL_USER: ${DB_USER:-ecommerce_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ecommerce_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce_network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: ecommerce_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DB_HOST: database
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-ecommerce}
+      DB_USER: ${DB_USER:-ecommerce_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ecommerce_password}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      PORT: 4000
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    container_name: ecommerce_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+      VITE_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      VITE_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ecommerce_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ecommerce_network:
+    driver: bridge
