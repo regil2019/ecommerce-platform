@@ -23,7 +23,10 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middlewares essenciais
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONT_URL,
+  credentials: true
+}));
 app.use(express.json());
 app.use(errorHandler);
 app.use(helmet());
@@ -92,7 +95,7 @@ const startServer = async () => {
     // await db.sync({ force: false, alter: false });
     console.log("✔ Modelos sincronizados");
 
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0',() => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
       console.log(`🔗 Acesse: http://localhost:${PORT}`);
     });

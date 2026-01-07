@@ -11,8 +11,29 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS configuration - secure for production
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      // In development, allow all origins
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Webhook endpoint needs raw body for signature verification
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
