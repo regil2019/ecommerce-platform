@@ -28,6 +28,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.set('trust proxy', 1);
 app.use(errorHandler);
 app.use(helmet());
 
@@ -86,23 +87,26 @@ app.get("/health", (req, res) => {
 });
 
 // Inicialização do servidor
+// server.js → MUDANÇA CRÍTICA:
 const startServer = async () => {
   try {
     await db.authenticate();
     console.log("✔ Conexão com o banco estabelecida");
 
-    // Use migrations in production, sync disabled for now
-    // await db.sync({ force: false, alter: false });
-    console.log("✔ Modelos sincronizados");
+    if (process.env.NODE_ENV !== "production") {
+      await db.sync({ alter: true });
+      console.log("✔ Modelos sincronizados (dev)");
+    }
 
-    app.listen(PORT, '0.0.0.0',() => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`🔗 Acesse: http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Falha na inicialização:", error.message);
+    console.error("❌ Falha na inicialização:", error);
     process.exit(1);
   }
 };
+
+
 
 startServer();

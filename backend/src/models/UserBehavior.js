@@ -11,7 +11,7 @@ const UserBehavior = db.define('UserBehavior', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Users',
+      model: 'customers',
       key: 'id'
     }
   },
