@@ -1,0 +1,6 @@
+backend/
+Dockerfile
+fly.toml
+.env
+node_modules/
+*.log
