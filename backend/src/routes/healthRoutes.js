@@ -49,3 +49,5 @@ router.get('/ready', async (req, res) => {
     });
   }
 });
+
+export default router;
