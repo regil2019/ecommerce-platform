@@ -50,3 +50,4 @@ Thumbs.db
 # SSL certificates (don't commit real ones)
 nginx/ssl/*.crt
 nginx/ssl/*.key
+.vercel

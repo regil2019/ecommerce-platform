@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 4000;
 
 // Middlewares essenciais
 app.use(cors({
-  origin: process.env.FRONT_URL,
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json());
@@ -63,6 +63,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/health', healthRoutes);
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
 
 // Rotas de status
 app.get("/", (req, res) => {

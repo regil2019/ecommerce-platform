@@ -4,40 +4,14 @@ import monitoringService from '../services/monitoringService.js';
 
 const router = express.Router();
 
-/**
- * @swagger
- * /api/health:
- *   get:
- *     summary: Health check endpoint
- *     tags: [Health]
- *     description: Health check endpoint for monitoring service status
- *     responses:
- *       200:
- *         description: Service is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: "healthy"
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                   example: "2023-12-28T01:37:48.638Z"
- *                 uptime:
- *                   type: number
- *                   format: float
- *                   example: 123.456
- *                 environment:
- *                   type: string
- *                   example: "development"
- *                 version:
- *                   type: string
- *                   example: "1.0.0"
- */
-router.get('/', async (req, res) => {
+// Simple health check for load balancers (Koyeb, etc.)
+// Returns 200 quickly without expensive operations
+router.get('/live', (req, res) => {
+  res.status(200).json({ status: 'alive', timestamp: new Date().toISOString() });
+});
+
+// Full health check with system metrics
+router.get('/ready', async (req, res) => {
   try {
     // Get system metrics
     const cpuUsage = await osu.cpu.usage();
@@ -75,5 +49,3 @@ router.get('/', async (req, res) => {
     });
   }
 });
-
-export default router;
