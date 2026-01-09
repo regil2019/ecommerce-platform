@@ -16,6 +16,7 @@ import adminRoutes from './src/routes/adminRoutes.js';
 import reviewRoutes from './src/routes/reviewRoutes.js';
 import favoriteRoutes from './src/routes/favoriteRoutes.js';
 import healthRoutes from './src/routes/healthRoutes.js';
+import recommendationRoutes from './src/routes/recommendationRoutes.js';
 
 // Configuração inicial
 dotenv.config();
@@ -62,6 +63,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/health', healthRoutes);
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });
