@@ -24,10 +24,36 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middlewares essenciais
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
+// Allow multiple origins for CORS
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'https://ecommerce-platform-six-lovat.vercel.app',
+      'https://ecommerce-platform-git-main-regils-projects.vercel.app',
+      'https://ecommerce-platform-lird7cgxg-regils-projects.vercel.app',
+      'https://ecommerce-platform-n4eiwd16d-regils-projects.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ];
+    
+    // Allow any vercel.app domain
+    if (origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.set('trust proxy', 1);
 app.use(errorHandler);
