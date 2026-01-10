@@ -14,7 +14,7 @@ const app = express();
 // CORS configuration - secure for production
 const allowedOrigins = process.env.FRONTEND_URL 
   ? [process.env.FRONTEND_URL]
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : ['http://localhost:3000', 'http://localhost:5173','https://ecommerce-platform-drab.vercel.app'];
 
 app.use(cors({
   origin: function(origin, callback) {
