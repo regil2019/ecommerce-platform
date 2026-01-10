@@ -1,79 +1,17 @@
+/* =========================
+   Imports
+========================= */
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
-import swaggerUi from 'swagger-ui-express';
-import expressWinston from 'express-winston';
-import specs from './config/swagger.js';
-import logger from './config/logger.js';
-import monitoringService from './services/monitoringService.js';
+import swaggerUi from "swagger-ui-express";
+import expressWinston from "express-winston";
 
-dotenv.config();
+/* Config & utils */
+import specs from "./config/swagger.js";
+import logger from "./config/logger.js";
+import monitoringService from "./services/monitoringService.js";
 
-const app = express();
-
-// CORS configuration - secure for production
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL]
-  : ['http://localhost:3000', 'http://localhost:5173','https://ecommerce-platform-drab.vercel.app'];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      // In development, allow all origins
-      if (process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// Webhook endpoint needs raw body for signature verification
-app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
-
-// All other routes use JSON parsing
-app.use(express.json());
-
-// Request logging middleware
-app.use(expressWinston.logger({
-  winstonInstance: logger,
-  meta: true,
-  msg: "HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms",
-  expressFormat: true,
-  colorize: false,
-  ignoreRoute: function (req, res) { return false; } // Log all routes
-}));
-
-// Performance monitoring middleware
-app.use((req, res, next) => {
-  const start = Date.now();
-  monitoringService.incrementRequests();
-
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    monitoringService.recordResponseTime(req.originalUrl, req.method, duration);
-    monitoringService.recordStatusCode(res.statusCode);
-    if (res.statusCode >= 400) {
-      monitoringService.incrementErrors();
-    }
-  });
-
-  next();
-});
-
-// Health check endpoint
-app.get("/", (req, res) => {
-  res.send("O servidor está rodando...");
-});
-
-// Import routes
+/* Routes */
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -86,10 +24,73 @@ import healthRoutes from "./routes/healthRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
-console.log('📦 Recommendation routes imported:', typeof recommendationRoutes);
-console.log('📦 Recommendation routes object:', recommendationRoutes);
 
-// API routes
+/* =========================
+   App setup
+========================= */
+dotenv.config();
+const app = express();
+
+/* =========================
+   Webhook (RAW body)
+========================= */
+app.use(
+  "/api/payment/webhook",
+  express.raw({ type: "application/json" })
+);
+
+/* =========================
+   JSON parser
+========================= */
+app.use(express.json());
+
+/* =========================
+   Request logging
+========================= */
+app.use(
+  expressWinston.logger({
+    winstonInstance: logger,
+    meta: true,
+    msg: "HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms",
+    expressFormat: true,
+    colorize: false,
+  })
+);
+
+/* =========================
+   Performance monitoring
+========================= */
+app.use((req, res, next) => {
+  const start = Date.now();
+  monitoringService.incrementRequests();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    monitoringService.recordResponseTime(
+      req.originalUrl,
+      req.method,
+      duration
+    );
+    monitoringService.recordStatusCode(res.statusCode);
+
+    if (res.statusCode >= 400) {
+      monitoringService.incrementErrors();
+    }
+  });
+
+  next();
+});
+
+/* =========================
+   Health base
+========================= */
+app.get("/", (req, res) => {
+  res.send("O servidor está rodando...");
+});
+
+/* =========================
+   API routes
+========================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -103,29 +104,40 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 
-// Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+/* =========================
+   Swagger
+========================= */
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint não encontrado' });
+/* =========================
+   404
+========================= */
+app.use("*", (req, res) => {
+  res.status(404).json({ error: "Endpoint não encontrado" });
 });
 
-// Error logging middleware
-app.use(expressWinston.errorLogger({
-  winstonInstance: logger
-}));
+/* =========================
+   Error logging
+========================= */
+app.use(
+  expressWinston.errorLogger({
+    winstonInstance: logger,
+  })
+);
 
-// General error handler
+/* =========================
+   Error handler final
+========================= */
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error', {
+  logger.error("Unhandled error", {
     error: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
-    ip: req.ip
+    ip: req.ip,
   });
-  res.status(500).json({ error: 'Internal server error' });
+
+  res.status(500).json({ error: "Internal server error" });
 });
 
 export default app;
