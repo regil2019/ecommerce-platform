@@ -7,8 +7,12 @@ const router = express.Router();
 
 // Simple health check for load balancers (Koyeb, etc.)
 // Returns 200 quickly without expensive operations
-router.get('/live', (req, res) => {
-  res.status(200).json({ status: 'alive', timestamp: new Date().toISOString() });
+router.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    message: 'API is running and accessible.',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Full health check with system metrics
