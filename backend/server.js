@@ -97,7 +97,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/recommendations", recommendationRoutes);
-app.use("/api/health", healthRoutes);
+/*app.use("/api/health", healthRoutes);*/
 
 /* =========================
    Health / Status
