@@ -32,10 +32,10 @@ const corsOptions = {
     
     // List of allowed origins
     const allowedOrigins = [
-      'https://ecommerce-platform-six-lovat.vercel.app',
-      'https://ecommerce-platform-git-main-regils-projects.vercel.app',
-      'https://ecommerce-platform-lird7cgxg-regils-projects.vercel.app',
-      'https://ecommerce-platform-n4eiwd16d-regils-projects.vercel.app',
+      'https://ecommerce-platform-drab.vercel.app/',
+      'https://ecommerce-platform-git-main-regils-projects.vercel.app/',
+      'https://ecommerce-platform-ric3ejxi0-regils-projects.vercel.app/',
+      'https://ecommerce-platform-regils-projects.vercel.app/',
       'http://localhost:3000',
       'http://localhost:5173'
     ];
@@ -53,7 +53,15 @@ const corsOptions = {
   },
   credentials: true
 };
-app.use(cors(corsOptions));
+/*app.use(cors(corsOptions));*/
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    process.env.FRONTEND_URL || 'https://ecommerce-platform-drab.vercel.app/'
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 app.set('trust proxy', 1);
 app.use(errorHandler);

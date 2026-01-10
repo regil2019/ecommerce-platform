@@ -1,0 +1,7 @@
+<parameter name="content">{
+  "buildCommand": "pnpm install && pnpm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "pnpm install"
+}
+</parameter>
