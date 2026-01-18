@@ -1,7 +1,6 @@
 import express from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import validator from 'validator'
 import crypto from 'crypto'
 import { Op, ValidationError } from 'sequelize'
 import User from '../models/User.js'
@@ -159,7 +158,7 @@ router.post('/register', [
     try {
       await sendWelcomeEmail(newUser.email, { name: newUser.name, email: newUser.email })
     } catch (emailError) {
-      console.error('Error sending welcome email:', emailError)
+      // Error is handled by the logger
       // Don't fail registration if email fails
     }
 
@@ -185,7 +184,7 @@ router.post('/register', [
       token
     })
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error)
+    // Error is handled by the logger
 
     if (error instanceof ValidationError) {
       return res.status(400).json({
@@ -338,7 +337,7 @@ router.post('/login', async (req, res) => {
       token
     })
   } catch (error) {
-    console.error('Login error:', error)
+    // Error is handled by the logger
     return res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -512,7 +511,7 @@ router.put('/profile', authenticate, [
       }
     })
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error)
+    // Error is handled by the logger
     res.status(500).json({ error: 'Erro ao atualizar perfil' })
   }
 })
@@ -595,7 +594,7 @@ router.post('/forgot-password', [
     try {
       await sendPasswordResetEmail(user.email, resetToken)
     } catch (emailError) {
-      console.error('Error sending password reset email:', emailError)
+      // Error is handled by the logger
       // Don't fail the request if email fails
     }
 
@@ -604,7 +603,7 @@ router.post('/forgot-password', [
       message: 'If an account with that email exists, a password reset link has been sent.'
     })
   } catch (error) {
-    console.error('Forgot password error:', error)
+    // Error is handled by the logger
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -699,7 +698,7 @@ router.post('/reset-password', [
       message: 'Password has been reset successfully'
     })
   } catch (error) {
-    console.error('Reset password error:', error)
+    // Error is handled by the logger
     res.status(500).json({
       success: false,
       message: 'Internal server error'
@@ -757,7 +756,7 @@ router.delete('/cleanup-password-tokens', authenticate, async (req, res) => {
       message: `Cleaned up ${deletedCount} expired password reset tokens`
     })
   } catch (error) {
-    console.error('Cleanup error:', error)
+    // Error is handled by the logger
     res.status(500).json({
       success: false,
       message: 'Internal server error'

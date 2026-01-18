@@ -1,7 +1,6 @@
 import express from 'express'
 import { Review, User, Product } from '../models/index.js'
-import { authenticate, isAdmin } from '../middleware/authMiddleware.js'
-import { validationResult } from 'express-validator'
+import { authenticate } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 

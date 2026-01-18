@@ -1,7 +1,6 @@
 import express from 'express'
 import Category from '../models/Category.js'
 import { authenticate, isAdmin } from '../middleware/authMiddleware.js'
-import { categoriesLimiter } from '../middleware/rateLimiter.js'
 import multer from 'multer'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import cloudinary from '../config/cloudinary.js'

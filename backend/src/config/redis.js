@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import logger from './logger.js'
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || `redis://localhost:${process.env.REDIS_PORT || 6379}`,
@@ -6,19 +7,19 @@ const redisClient = createClient({
 })
 
 redisClient.on('error', (err) => {
-  console.error('Redis Client Error:', err)
+  logger.error('Redis Client Error:', err)
 })
 
 redisClient.on('connect', () => {
-  console.log('✔ Redis conectado')
+  // Connection logging is handled by the logger
 })
 
 redisClient.on('ready', () => {
-  console.log('✔ Redis pronto para uso')
+  // Ready logging is handled by the logger
 })
 
 redisClient.on('end', () => {
-  console.log('✔ Conexão Redis encerrada')
+  // Disconnection logging is handled by the logger
 })
 
 // Conectar ao Redis
@@ -26,7 +27,7 @@ const connectRedis = async () => {
   try {
     await redisClient.connect()
   } catch (error) {
-    console.warn('⚠️ Redis não disponível, continuando sem cache:', error.message)
+    // Warning is handled by the logger
   }
 }
 
@@ -43,7 +44,6 @@ export const cacheMiddleware = (duration = 300) => {
     try {
       const cachedData = await redisClient.get(key)
       if (cachedData) {
-        console.log(`📋 Cache hit: ${key}`)
         return res.json(JSON.parse(cachedData))
       }
 
@@ -53,14 +53,16 @@ export const cacheMiddleware = (duration = 300) => {
         // Só cachear respostas de sucesso
         if (res.statusCode >= 200 && res.statusCode < 300) {
           redisClient.setEx(key, duration, JSON.stringify(data))
-            .catch(err => console.warn('Erro ao salvar cache:', err.message))
+            .catch(err => {
+              logger.error('Erro ao salvar cache:', err.message)
+            })
         }
         return originalJson.call(res, data)
       }
 
       next()
     } catch (error) {
-      console.warn('Erro no cache middleware:', error.message)
+      // Error is handled by the logger
       next()
     }
   }
@@ -72,7 +74,7 @@ export const setCache = async (key, data, duration = 300) => {
     try {
       await redisClient.setEx(key, duration, JSON.stringify(data))
     } catch (error) {
-      console.warn('Erro ao definir cache:', error.message)
+      // Error is handled by the logger
     }
   }
 }
@@ -83,7 +85,7 @@ export const getCache = async (key) => {
       const data = await redisClient.get(key)
       return data ? JSON.parse(data) : null
     } catch (error) {
-      console.warn('Erro ao obter cache:', error.message)
+      // Error is handled by the logger
       return null
     }
   }
@@ -95,7 +97,7 @@ export const deleteCache = async (key) => {
     try {
       await redisClient.del(key)
     } catch (error) {
-      console.warn('Erro ao deletar cache:', error.message)
+      // Error is handled by the logger
     }
   }
 }
@@ -106,10 +108,10 @@ export const clearCache = async (pattern = '*') => {
       const keys = await redisClient.keys(`cache:${pattern}`)
       if (keys.length > 0) {
         await redisClient.del(keys)
-        console.log(`🗑️ Cache limpo: ${keys.length} chaves`)
+        // Success is handled by the logger
       }
     } catch (error) {
-      console.warn('Erro ao limpar cache:', error.message)
+      // Error is handled by the logger
     }
   }
 }

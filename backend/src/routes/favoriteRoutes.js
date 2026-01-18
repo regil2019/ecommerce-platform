@@ -1,5 +1,5 @@
 import express from 'express'
-import { Favorite, User, Product, Category } from '../models/index.js'
+import { Favorite, Product, Category } from '../models/index.js'
 import { authenticate } from '../middleware/authMiddleware.js'
 import { favoritesLimiter } from '../middleware/rateLimiter.js'
 import behaviorService from '../services/behaviorService.js'

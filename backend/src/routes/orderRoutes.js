@@ -13,9 +13,6 @@ import behaviorService from '../services/behaviorService.js'
 
 const router = express.Router()
 
-// Adicione no início do arquivo (após imports)
-const validOrderStatuses = ['pending', 'processing', 'completed', 'cancelled']
-
 /**
  * @route POST /api/orders/checkout
  * @description Finaliza o carrinho e cria um novo pedido

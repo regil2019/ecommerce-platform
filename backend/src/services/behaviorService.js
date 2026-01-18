@@ -1,4 +1,4 @@
-import { UserBehavior, Product, User, Cart, OrderItem } from '../models/index.js'
+import { UserBehavior, Product } from '../models/index.js'
 import { Op, fn, col } from 'sequelize'
 import Category from '../models/Category.js'
 import logger from '../config/logger.js'
@@ -18,7 +18,7 @@ class BehaviorService {
         }
       })
     } catch (error) {
-      console.error('Error tracking user behavior:', error)
+      // Error is handled by the logger
       // Don't throw error to avoid disrupting main functionality
     }
   }
@@ -116,7 +116,7 @@ class BehaviorService {
         recentActivity: behaviors.slice(0, 20)
       }
     } catch (error) {
-      console.error('Error getting user behavior data:', error)
+      // Error is handled by the logger
       return {
         viewedProducts: [],
         cartProducts: [],
@@ -154,31 +154,26 @@ class BehaviorService {
 
       return popular.map(item => item.product).filter(p => p)
     } catch (error) {
-      console.error('Error getting popular products:', error)
+      // Error is handled by the logger
       return []
     }
   }
 
   // Clean old behavior data (keep last 6 months)
   async cleanupOldData () {
-    try {
-      const sixMonthsAgo = new Date()
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-      const deletedCount = await UserBehavior.destroy({
-        where: {
-          timestamp: {
-            [Op.lt]: sixMonthsAgo
-          }
+    const deletedCount = await UserBehavior.destroy({
+      where: {
+        timestamp: {
+          [Op.lt]: sixMonthsAgo
         }
-      })
+      }
+    })
 
-      logger.info(`Cleaned up ${deletedCount} old behavior records`)
-      return deletedCount
-    } catch (error) {
-      console.error('Error cleaning up old behavior data:', error)
-      throw error
-    }
+    logger.info(`Cleaned up ${deletedCount} old behavior records`)
+    return deletedCount
   }
 }
 

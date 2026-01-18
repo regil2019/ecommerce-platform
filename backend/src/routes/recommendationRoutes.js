@@ -1,9 +1,7 @@
 import express from 'express'
 import { authenticate } from '../middleware/authMiddleware.js'
 import { recommendationsLimiter } from '../middleware/rateLimiter.js'
-import behaviorService from '../services/behaviorService.js'
 import logger from '../config/logger.js'
-import natural from 'natural'
 import { Sequelize } from 'sequelize'
 
 const router = express.Router()

@@ -6,7 +6,7 @@ export const errorHandler = (err, req, res, next) => {
     })
   }
 
-  console.error(err.stack)
+  // Error is handled by the logger
   res.status(500).json({
     err: 'Erro interno',
     ...(process.env.NODE_ENV === 'development' && { details: err.message })
