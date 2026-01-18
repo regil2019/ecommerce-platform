@@ -5,8 +5,8 @@ dotenv.config()
 
 // Configuração SSL para TiDB Cloud
 const getSSLConfig = () => {
-  // Se DATABASE_URL contém SSL
-  if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('ssl=')) {
+  // Se DATABASE_URL contém ssl=true, configurar SSL para TiDB Cloud
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('ssl=true')) {
     return {
       require: true,
       rejectUnauthorized: false
@@ -28,9 +28,12 @@ const getSSLConfig = () => {
 
 let sequelize
 
-// Se DATABASE_URL estiver definida, usar ela
+// Se DATABASE_URL estiver definida, parsear e configurar manualmente
 if (process.env.DATABASE_URL) {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  // Remover parâmetros de query da URL para evitar conflitos com mysql2
+  const cleanUrl = process.env.DATABASE_URL.split('?')[0]
+
+  sequelize = new Sequelize(cleanUrl, {
     dialect: 'mysql',
     logging: false,
     dialectOptions: {
