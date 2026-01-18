@@ -194,9 +194,10 @@ const startServer = async () => {
     await db.authenticate();
     console.log("✔ Banco conectado");
 
-    if (process.env.NODE_ENV !== "production") {
+    // Só faz sync em desenvolvimento LOCAL, não em produção/containers
+    if (process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL) {
       await db.sync({ alter: true });
-      console.log("✔ Models sincronizados (dev)");
+      console.log("✔ Models sincronizados (dev local)");
     }
 
     app.listen(PORT, "0.0.0.0", () => {

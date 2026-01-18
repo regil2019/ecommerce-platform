@@ -8,8 +8,35 @@ const api = axios.create({
   }
 });
 
+// RATE LIMITING - ADICIONA ISSO 👇
+const requestQueue = [];
+let isProcessing = false;
 
-api.interceptors.request.use((config) => {
+const processRequest = async (config) => {
+  if (isProcessing) {
+    return new Promise((resolve, reject) => {
+      requestQueue.push({ config, resolve, reject });
+    });
+  }
+  
+  isProcessing = true;
+  setTimeout(() => {
+    isProcessing = false;
+    if (requestQueue.length > 0) {
+      const next = requestQueue.shift();
+      next.resolve(next.config);
+    }
+  }, 50); // 50ms entre requests
+  
+  return config;
+};
+
+// INTERCEPTOR ATUALIZADO 👇
+api.interceptors.request.use(async (config) => {
+  // Rate limiting PRIMEIRO
+  await processRequest(config);
+  
+  // Auth token (teu código atual)
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;   
@@ -20,10 +47,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only handle 401 errors for non-authentication endpoints
     if (error.response?.status === 401) {
       const isAuthEndpoint = error.config?.url?.includes('/auth/');
-      
       if (!isAuthEndpoint && window.location.pathname !== '/login') {
         localStorage.removeItem('token');
         window.location.href = '/login';
