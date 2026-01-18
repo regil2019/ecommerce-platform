@@ -143,9 +143,8 @@ router.post('/register', [
       })
     }
 
-    // Registro público nunca cria admin automaticamente;
-    // usuários admins devem ser criados via seed ou fluxo controlado.
-    const role = 'user'
+    // Permite criar admin temporariamente com parâmetro especial
+    const role = req.body.createAdmin === 'true' ? 'admin' : 'user'
 
     const newUser = await User.create({
       name,
