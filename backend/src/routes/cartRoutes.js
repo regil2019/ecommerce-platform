@@ -37,6 +37,23 @@ router.get('/', authenticate, async (req, res) => {
       include: [{
         model: Product,
         attributes: ['id', 'name', 'price', 'images', 'description']
+      }]
+    })
+    res.json(cartItems)
+  } catch (error) {
+    console.error('Cart error:', error)
+    res.status(500).json({ error: 'Erro ao buscar carrinho', details: error.message })
+  }
+})
+
+// LEGACY: Listar itens sem autenticação (para testes)
+router.get('/public', async (req, res) => {
+  try {
+    const cartItems = await Cart.findAll({
+      where: { userId: req.user.id },
+      include: [{
+        model: Product,
+        attributes: ['id', 'name', 'price', 'images', 'description']
       }] // Trás dados do produto associado
     })
     res.json(cartItems)

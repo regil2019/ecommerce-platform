@@ -19,7 +19,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage })
 
-// GET /api/categories - Get all categories
+// GET /api/categories - Get all categories (public)
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
