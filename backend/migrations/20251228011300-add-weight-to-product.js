@@ -2,11 +2,15 @@
 
 export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('products', 'weight', {
-      type: Sequelize.FLOAT,
-      allowNull: false,
-      defaultValue: 1.0 // kg
-    });
+    // Check if weight column already exists
+    const tableDescription = await queryInterface.describeTable('products');
+    if (!tableDescription.weight) {
+      await queryInterface.addColumn('products', 'weight', {
+        type: Sequelize.FLOAT,
+        allowNull: false,
+        defaultValue: 1.0 // kg
+      });
+    }
   },
 
   async down(queryInterface, Sequelize) {

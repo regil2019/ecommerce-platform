@@ -33,6 +33,10 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      // Disable common false positives for modern React
+      'react/prop-types': 'off', // Many components are UI library components
+      'react/display-name': 'off', // Forward refs often don't need display names
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^React$' }], // React imports are often auto-imported
     },
   },
 ]

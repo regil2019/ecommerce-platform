@@ -3,12 +3,16 @@
 /** @type {import('sequelize-cli').Migration} */
 export default {
   async up(queryInterface, Sequelize) {
-    // Add images (JSON) column to products table
-    await queryInterface.addColumn('products', 'images', {
-      type: Sequelize.JSON,
-      allowNull: false,
-      defaultValue: [],
-    });
+    // Check if images column already exists
+    const tableDescription = await queryInterface.describeTable('products');
+    if (!tableDescription.images) {
+      // Add images (JSON) column to products table
+      await queryInterface.addColumn('products', 'images', {
+        type: Sequelize.JSON,
+        allowNull: false,
+        defaultValue: [],
+      });
+    }
   },
 
   async down(queryInterface, Sequelize) {

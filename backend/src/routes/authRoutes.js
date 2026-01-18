@@ -1,16 +1,16 @@
-import express from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import validator from 'validator';
-import crypto from 'crypto';
-import { Op } from 'sequelize';
-import User from '../models/User.js';
-import PasswordReset from '../models/PasswordReset.js';
-import { body, validationResult } from 'express-validator';
-import { authenticate } from '../middleware/authMiddleware.js';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService.js';
+import express from 'express'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import validator from 'validator'
+import crypto from 'crypto'
+import { Op, ValidationError } from 'sequelize'
+import User from '../models/User.js'
+import PasswordReset from '../models/PasswordReset.js'
+import { body, validationResult } from 'express-validator'
+import { authenticate } from '../middleware/authMiddleware.js'
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService.js'
 
-const router = express.Router();
+const router = express.Router()
 
 /**
  * @swagger
@@ -108,32 +108,44 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/register', [
-  body('name').trim().notEmpty().withMessage('Nome obrigatório'),
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Nome obrigatório'),
   body('email')
     .isEmail()
     .withMessage('Email inválido')
     .normalizeEmail(),
-  body('address').trim().notEmpty().withMessage('Endereço obrigatório'),
-  body('password').isLength({ min: 6 }).withMessage('A senha deve ter no mínimo 6 caracteres')
+  body('address')
+    .trim()
+    .notEmpty()
+    .withMessage('Endereço obrigatório'),
+  // Alinha com as regras de validação do modelo User
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('A senha deve ter no mínimo 8 caracteres')
+    .matches(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+    .withMessage('A senha deve conter pelo menos uma letra minúscula, uma maiúscula, um número e um caractere especial')
 ], async (req, res) => {
-  const { name, email, address, password } = req.body;
-  const errors = validationResult(req);
+  const { name, email, address, password } = req.body
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ errors: errors.array() })
   }
 
   try {
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ where: { email } })
     if (existingUser) {
       return res.status(409).json({
         success: false,
         message: 'Email já registrado'
-      });
+      })
     }
 
-    const isAdminEmail = email === 'admin@example.com';
-    const role = isAdminEmail ? 'admin' : 'user';
+    // Registro público nunca cria admin automaticamente;
+    // usuários admins devem ser criados via seed ou fluxo controlado.
+    const role = 'user'
 
     const newUser = await User.create({
       name,
@@ -141,25 +153,25 @@ router.post('/register', [
       address,
       password: await bcrypt.hash(password, 10),
       role
-    });
+    })
 
     // Send welcome email
     try {
-      await sendWelcomeEmail(newUser.email, { name: newUser.name, email: newUser.email });
+      await sendWelcomeEmail(newUser.email, { name: newUser.name, email: newUser.email })
     } catch (emailError) {
-      console.error('Error sending welcome email:', emailError);
+      console.error('Error sending welcome email:', emailError)
       // Don't fail registration if email fails
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        id: newUser.id, 
-        role: newUser.role 
+      {
+        id: newUser.id,
+        role: newUser.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
-    );
+    )
 
     return res.status(201).json({
       success: true,
@@ -171,17 +183,28 @@ router.post('/register', [
         role: newUser.role
       },
       token
-    });
-
+    })
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
+    console.error('Erro ao registrar usuário:', error)
+
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Erro de validação ao registrar usuário',
+        errors: error.errors?.map((e) => ({
+          field: e.path,
+          message: e.message
+        }))
+      })
+    }
+
     return res.status(500).json({
       success: false,
       message: 'Internal server error',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    })
   }
-});
+})
 
 /**
  * @swagger
@@ -263,45 +286,45 @@ router.post('/register', [
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
 
   // Basic validation
   if (!email || !password) {
     return res.status(400).json({
       success: false,
       message: 'Email and password are required'
-    });
+    })
   }
 
   try {
     // Find user by email
-    const user = await User.findOne({ where: { email } });
-    
+    const user = await User.findOne({ where: { email } })
+
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
-      });
+      })
     }
 
     // Verify password
-    const isPasswordValid = await user.checkPassword(password);
+    const isPasswordValid = await user.checkPassword(password)
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
-      });
+      })
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         id: user.id,
-        role: user.role 
+        role: user.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
-    );
+    )
 
     return res.json({
       success: true,
@@ -313,16 +336,15 @@ router.post('/login', async (req, res) => {
         role: user.role
       },
       token
-    });
-
+    })
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error)
     return res.status(500).json({
       success: false,
       message: 'Internal server error'
-    });
+    })
   }
-});
+})
 
 /**
  * @swagger
@@ -368,10 +390,10 @@ router.get('/me', authenticate, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: ['id', 'name', 'email', 'role', 'address']
-    });
+    })
 
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+      return res.status(404).json({ error: 'Usuário não encontrado' })
     }
 
     res.json({
@@ -380,11 +402,11 @@ router.get('/me', authenticate, async (req, res) => {
       email: user.email,
       role: user.role,
       address: user.address
-    });
+    })
   } catch (error) {
-    res.status(500).json({ error: "Erro ao buscar usuário" });
+    res.status(500).json({ error: 'Erro ao buscar usuário' })
   }
-});
+})
 
 /**
  * @swagger
@@ -459,24 +481,24 @@ router.put('/profile', authenticate, [
   body('name').trim().notEmpty().withMessage('Nome obrigatório'),
   body('address').optional().trim()
 ], async (req, res) => {
-  const { name, address } = req.body;
-  const errors = validationResult(req);
+  const { name, address } = req.body
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ errors: errors.array() })
   }
 
   try {
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findByPk(req.user.id)
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+      return res.status(404).json({ error: 'Usuário não encontrado' })
     }
 
-    user.name = name;
+    user.name = name
     if (address !== undefined) {
-      user.address = address;
+      user.address = address
     }
-    await user.save();
+    await user.save()
 
     res.json({
       success: true,
@@ -488,12 +510,12 @@ router.put('/profile', authenticate, [
         role: user.role,
         address: user.address
       }
-    });
+    })
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    res.status(500).json({ error: "Erro ao atualizar perfil" });
+    console.error('Erro ao atualizar perfil:', error)
+    res.status(500).json({ error: 'Erro ao atualizar perfil' })
   }
-});
+})
 
 /**
  * @swagger
@@ -538,58 +560,57 @@ router.put('/profile', authenticate, [
 router.post('/forgot-password', [
   body('email').isEmail().withMessage('Email inválido').normalizeEmail()
 ], async (req, res) => {
-  const { email } = req.body;
-  const errors = validationResult(req);
+  const { email } = req.body
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ errors: errors.array() })
   }
 
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email } })
     if (!user) {
       // Don't reveal if email exists or not for security
       return res.json({
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent.'
-      });
+      })
     }
 
     // Delete any existing reset tokens for this user
-    await PasswordReset.destroy({ where: { userId: user.id } });
+    await PasswordReset.destroy({ where: { userId: user.id } })
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     // Save reset token
     await PasswordReset.create({
       token: resetToken,
       userId: user.id,
       expiresAt
-    });
+    })
 
     // Send reset email
     try {
-      await sendPasswordResetEmail(user.email, resetToken);
+      await sendPasswordResetEmail(user.email, resetToken)
     } catch (emailError) {
-      console.error('Error sending password reset email:', emailError);
+      console.error('Error sending password reset email:', emailError)
       // Don't fail the request if email fails
     }
 
     res.json({
       success: true,
       message: 'If an account with that email exists, a password reset link has been sent.'
-    });
-
+    })
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Forgot password error:', error)
     res.status(500).json({
       success: false,
       message: 'Internal server error'
-    });
+    })
   }
-});
+})
 
 /**
  * @swagger
@@ -640,11 +661,11 @@ router.post('/reset-password', [
   body('token').notEmpty().withMessage('Token is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
-  const { token, password } = req.body;
-  const errors = validationResult(req);
+  const { token, password } = req.body
+  const errors = validationResult(req)
 
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ errors: errors.array() })
   }
 
   try {
@@ -657,35 +678,34 @@ router.post('/reset-password', [
         }
       },
       include: [{ model: User, as: 'user' }]
-    });
+    })
 
     if (!resetRecord) {
       return res.status(400).json({
         success: false,
         message: 'Invalid or expired reset token'
-      });
+      })
     }
 
     // Update user password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await resetRecord.user.update({ password: hashedPassword });
+    const hashedPassword = await bcrypt.hash(password, 10)
+    await resetRecord.user.update({ password: hashedPassword })
 
     // Delete the reset token
-    await resetRecord.destroy();
+    await resetRecord.destroy()
 
     res.json({
       success: true,
       message: 'Password has been reset successfully'
-    });
-
+    })
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Reset password error:', error)
     res.status(500).json({
       success: false,
       message: 'Internal server error'
-    });
+    })
   }
-});
+})
 
 /**
  * @swagger
@@ -720,7 +740,7 @@ router.delete('/cleanup-password-tokens', authenticate, async (req, res) => {
     return res.status(403).json({
       success: false,
       message: 'Access denied. Admin only.'
-    });
+    })
   }
 
   try {
@@ -730,20 +750,19 @@ router.delete('/cleanup-password-tokens', authenticate, async (req, res) => {
           [Op.lt]: new Date()
         }
       }
-    });
+    })
 
     res.json({
       success: true,
       message: `Cleaned up ${deletedCount} expired password reset tokens`
-    });
-
+    })
   } catch (error) {
-    console.error('Cleanup error:', error);
+    console.error('Cleanup error:', error)
     res.status(500).json({
       success: false,
       message: 'Internal server error'
-    });
+    })
   }
-});
+})
 
-export default router;
+export default router

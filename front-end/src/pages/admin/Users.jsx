@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../components/ui/dialog";
+import { toast } from "sonner";
 import api from "../../services/api";
 
 export default function Users() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [editingUser, setEditingUser] = useState(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', email: '', address: '' });
+    const [editLoading, setEditLoading] = useState(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await api.get('/api/admin/users');
+                const response = await api.get('/admin/users');
                 console.log('Users data:', response.data);
-                setUsers(Array.isArray(response.data) ? response.data : []);
+                // The API returns { data: users, pagination: {...} }
+                const usersData = response.data?.data || [];
+                setUsers(Array.isArray(usersData) ? usersData : []);
             } catch(err) {
                 setError("Erro ao carregar usuários");
                 console.error(err);
@@ -24,21 +41,74 @@ export default function Users() {
 
     const updateUserRole = async (userId, newRole) => {
         try {
-            const response = await api.patch(`/api/admin/users/${userId}/role`, {
+            const response = await api.patch(`/admin/users/${userId}/role`, {
                 role: newRole
             });
-            
+
             // Atualizar a lista de usuários localmente
-            setUsers(users.map(user => 
-                user.id === userId 
+            setUsers(users.map(user =>
+                user.id === userId
                     ? { ...user, role: newRole }
                     : user
             ));
-            
-            console.log('Role atualizada:', response.data);
+
+            toast.success('Permissão do usuário atualizada com sucesso');
         } catch(err) {
             console.error('Erro ao atualizar role:', err);
-            alert('Erro ao atualizar permissão do usuário');
+            toast.error('Erro ao atualizar permissão do usuário');
+        }
+    };
+
+    const handleEditUser = (user) => {
+        setEditingUser(user);
+        setEditForm({
+            name: user.name || '',
+            email: user.email || '',
+            address: user.address || ''
+        });
+        setIsEditDialogOpen(true);
+    };
+
+    const handleUpdateUser = async () => {
+        if (!editingUser) return;
+
+        setEditLoading(true);
+        try {
+            const response = await api.put(`/admin/users/${editingUser.id}`, editForm);
+
+            // Atualizar a lista de usuários localmente
+            setUsers(users.map(user =>
+                user.id === editingUser.id
+                    ? { ...user, ...editForm }
+                    : user
+            ));
+
+            setIsEditDialogOpen(false);
+            setEditingUser(null);
+            toast.success('Usuário atualizado com sucesso');
+        } catch (err) {
+            console.error('Erro ao atualizar usuário:', err);
+            toast.error(err.response?.data?.error || 'Erro ao atualizar usuário');
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        try {
+            await api.delete(`/admin/users/${userId}`);
+
+            // Remover usuário da lista localmente
+            setUsers(users.filter(user => user.id !== userId));
+
+            toast.success('Usuário excluído com sucesso');
+        } catch (err) {
+            console.error('Erro ao excluir usuário:', err);
+            toast.error(err.response?.data?.error || 'Erro ao excluir usuário');
         }
     };
 
@@ -110,6 +180,59 @@ export default function Users() {
                     </table>
                 </div>
             )}
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Usuário</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="edit-name">Nome</Label>
+                            <Input
+                                id="edit-name"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                disabled={editLoading}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-email">Email</Label>
+                            <Input
+                                id="edit-email"
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                disabled={editLoading}
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="edit-address">Endereço</Label>
+                            <Input
+                                id="edit-address"
+                                value={editForm.address}
+                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                disabled={editLoading}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsEditDialogOpen(false)}
+                            disabled={editLoading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleUpdateUser}
+                            disabled={editLoading}
+                        >
+                            {editLoading ? 'Salvando...' : 'Salvar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

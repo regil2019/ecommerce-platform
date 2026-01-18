@@ -1,43 +1,43 @@
-import { DataTypes } from "sequelize";
-import db from "../config/database.js";
+import { DataTypes } from 'sequelize'
+import db from '../config/database.js'
 
 const Favorite = db.define(
-  "Favorite",
+  'Favorite',
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      autoIncrement: true,
+      autoIncrement: true
     },
 
-    user_id: {
+    userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "customers",
-        key: "id",
-      },
+        model: 'customers',
+        key: 'id'
+      }
     },
 
-    product_id: {
+    productId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "products",
-        key: "id",
-      },
-    },
+        model: 'products',
+        key: 'id'
+      }
+    }
   },
   {
-    tableName: "favorites",
+    tableName: 'favorites',
     timestamps: true,
     indexes: [
       {
         unique: true,
-        fields: ["user_id", "product_id"],
-      },
-    ],
+        fields: ['userId', 'productId']
+      }
+    ]
   }
-);
+)
 
-export default Favorite;
+export default Favorite

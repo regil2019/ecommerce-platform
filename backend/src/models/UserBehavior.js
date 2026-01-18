@@ -1,5 +1,5 @@
-import { DataTypes } from 'sequelize';
-import db from '../config/database.js';
+import { DataTypes } from 'sequelize'
+import db from '../config/database.js'
 
 const UserBehavior = db.define('UserBehavior', {
   id: {
@@ -19,7 +19,7 @@ const UserBehavior = db.define('UserBehavior', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Products',
+      model: 'products',
       key: 'id'
     }
   },
@@ -42,15 +42,15 @@ const UserBehavior = db.define('UserBehavior', {
 }, {
   indexes: [
     {
-      fields: ['userId', 'action', 'timestamp']
+      fields: ['user_id', 'action', 'timestamp']
     },
     {
-      fields: ['productId', 'action']
+      fields: ['product_id', 'action']
     },
     {
-      fields: ['sessionId']
+      fields: ['session_id']
     }
   ]
-});
+})
 
-export default UserBehavior;
+export default UserBehavior

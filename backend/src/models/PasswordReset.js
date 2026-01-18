@@ -1,6 +1,6 @@
-import { DataTypes } from 'sequelize';
-import db from '../config/database.js';
-import User from './User.js';
+import { DataTypes } from 'sequelize'
+import db from '../config/database.js'
+import User from './User.js'
 
 const PasswordReset = db.define('PasswordReset', {
   id: {
@@ -30,9 +30,9 @@ const PasswordReset = db.define('PasswordReset', {
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: false
-});
+})
 
-export default PasswordReset;
+export default PasswordReset
 
-User.hasMany(PasswordReset, { foreignKey: 'userId' });
-PasswordReset.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(PasswordReset, { foreignKey: 'userId' })
+PasswordReset.belongsTo(User, { foreignKey: 'userId' })

@@ -9,23 +9,23 @@ const SHIPPING_RATES = {
     standard: { base: 15.99, perKg: 4.00 },
     express: { base: 29.99, perKg: 7.00 }
   }
-};
+}
 
 const REGIONS = {
   domestic: ['US', 'CA'], // Example: United States, Canada
   international: ['other'] // All others
-};
+}
 
 /**
  * Determines the region based on country code
  * @param {string} countryCode - ISO country code
  * @returns {string} - 'domestic' or 'international'
  */
-function getRegion(countryCode) {
+function getRegion (countryCode) {
   if (REGIONS.domestic.includes(countryCode)) {
-    return 'domestic';
+    return 'domestic'
   }
-  return 'international';
+  return 'international'
 }
 
 /**
@@ -35,16 +35,16 @@ function getRegion(countryCode) {
  * @param {string} shippingOption - 'standard' or 'express'
  * @returns {number} - Shipping cost
  */
-function calculateShippingCost(countryCode, totalWeight, shippingOption) {
-  const region = getRegion(countryCode);
-  const rates = SHIPPING_RATES[region][shippingOption];
+function calculateShippingCost (countryCode, totalWeight, shippingOption) {
+  const region = getRegion(countryCode)
+  const rates = SHIPPING_RATES[region][shippingOption]
 
   if (!rates) {
-    throw new Error(`Invalid shipping option: ${shippingOption}`);
+    throw new Error(`Invalid shipping option: ${shippingOption}`)
   }
 
-  const cost = rates.base + (totalWeight * rates.perKg);
-  return Math.round(cost * 100) / 100; // Round to 2 decimal places
+  const cost = rates.base + (totalWeight * rates.perKg)
+  return Math.round(cost * 100) / 100 // Round to 2 decimal places
 }
 
 /**
@@ -53,24 +53,24 @@ function calculateShippingCost(countryCode, totalWeight, shippingOption) {
  * @param {number} totalWeight - Total weight in kg
  * @returns {Array} - Array of shipping options with costs
  */
-function getShippingOptions(countryCode, totalWeight) {
-  const region = getRegion(countryCode);
-  const options = [];
+function getShippingOptions (countryCode, totalWeight) {
+  const region = getRegion(countryCode)
+  const options = []
 
   for (const option in SHIPPING_RATES[region]) {
-    const cost = calculateShippingCost(countryCode, totalWeight, option);
+    const cost = calculateShippingCost(countryCode, totalWeight, option)
     options.push({
       type: option,
-      cost: cost,
+      cost,
       estimatedDays: option === 'standard' ? '5-7 days' : '1-2 days'
-    });
+    })
   }
 
-  return options;
+  return options
 }
 
 module.exports = {
   calculateShippingCost,
   getShippingOptions,
   getRegion
-};
+}

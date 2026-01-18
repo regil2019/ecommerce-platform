@@ -1,20 +1,21 @@
-import express from "express";
-import { Product, Category } from "../models/index.js";
-import { authenticate, isAdmin } from "../middleware/authMiddleware.js";
-import { Op } from "sequelize";
-import { validationResult } from "express-validator";
-import { productValidators } from "../validators/productValidators.js";
-import behaviorService from "../services/behaviorService.js";
+import express from 'express'
+import { Product, Category } from '../models/index.js'
+import { authenticate, isAdmin } from '../middleware/authMiddleware.js'
+import { productsLimiter } from '../middleware/rateLimiter.js'
+import { Op, ValidationError } from 'sequelize'
+import { validationResult } from 'express-validator'
+import { productValidators } from '../validators/productValidators.js'
+import behaviorService from '../services/behaviorService.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // Middleware para converter categoryId para número
 const convertCategoryId = (req, res, next) => {
   if (req.body.categoryId) {
-    req.body.categoryId = parseInt(req.body.categoryId);
+    req.body.categoryId = parseInt(req.body.categoryId)
   }
-  next();
-};
+  next()
+}
 
 /**
  * @swagger
@@ -87,41 +88,53 @@ const convertCategoryId = (req, res, next) => {
  *         description: Internal server error
  */
 router.post(
-  "/",
+  '/',
   authenticate,
   isAdmin,
   productValidators,
   convertCategoryId,
   async (req, res) => {
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() })
     }
 
     try {
-      console.log('Received payload:', req.body);
-      const { categoryId, ...productData } = req.body;
+      console.log('Received payload:', req.body)
+      const { categoryId, ...productData } = req.body
 
-      // Verifica se a categoria existe
+      // Verifica se a categoria existe (quando enviada)
       if (categoryId) {
-        const category = await Category.findByPk(categoryId);
+        const category = await Category.findByPk(categoryId)
         if (!category) {
-          return res.status(400).json({ error: "Categoria inválida" });
+          return res.status(400).json({ error: 'Categoria inválida' })
         }
       }
 
-  // Garante que images é array
-  const images = Array.isArray(productData.images) ? productData.images : [];
-  console.log('Creating product with data:', { ...productData, images, categoryId });
-  const product = await Product.create({ ...productData, images, categoryId });
-  res.status(201).json(product);
+      // Garante que images é array
+      const images = Array.isArray(productData.images) ? productData.images : []
+      console.log('Creating product with data:', { ...productData, images, categoryId })
+
+      const product = await Product.create({ ...productData, images, categoryId })
+      res.status(201).json(product)
     } catch (error) {
-      console.error("Erro ao criar produto:", error);
-      console.error("Detailed error:", error.message, error.errors);
-      res.status(500).json({ error: "Erro ao criar produto" });
+      console.error('Erro ao criar produto:', error)
+
+      // Erros de validação do Sequelize devem retornar 400
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          error: 'Erro de validação ao criar produto',
+          details: error.errors?.map((e) => ({
+            field: e.path,
+            message: e.message
+          }))
+        })
+      }
+
+      res.status(500).json({ error: 'Erro ao criar produto' })
     }
   }
-);
+)
 
 /**
  * @swagger
@@ -187,43 +200,54 @@ router.post(
  *         description: Internal server error
  */
 router.put(
-  "/:id",
+  '/:id',
   authenticate,
   isAdmin,
   productValidators,
   convertCategoryId,
   async (req, res) => {
-    const errors = validationResult(req);
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() })
     }
 
     try {
-      const product = await Product.findByPk(req.params.id);
+      const product = await Product.findByPk(req.params.id)
       if (!product) {
-        return res.status(404).json({ error: "Produto não encontrado" });
+        return res.status(404).json({ error: 'Produto não encontrado' })
       }
 
-      const { categoryId, ...productData } = req.body;
-      
-      // Verifica se a nova categoria existe
+      const { categoryId, ...productData } = req.body
+
+      // Verifica se a nova categoria existe (quando enviada)
       if (categoryId) {
-        const category = await Category.findByPk(categoryId);
+        const category = await Category.findByPk(categoryId)
         if (!category) {
-          return res.status(400).json({ error: "Categoria inválida" });
+          return res.status(400).json({ error: 'Categoria inválida' })
         }
       }
 
-  // Garante que images é array
-  const images = Array.isArray(productData.images) ? productData.images : [];
-  await product.update({ ...productData, images, categoryId });
-  res.json(product);
+      // Garante que images é array
+      const images = Array.isArray(productData.images) ? productData.images : []
+      await product.update({ ...productData, images, categoryId })
+      res.json(product)
     } catch (error) {
-      console.error("Erro ao atualizar produto:", error);
-      res.status(500).json({ error: "Erro ao atualizar produto" });
+      console.error('Erro ao atualizar produto:', error)
+
+      if (error instanceof ValidationError) {
+        return res.status(400).json({
+          error: 'Erro de validação ao atualizar produto',
+          details: error.errors?.map((e) => ({
+            field: e.path,
+            message: e.message
+          }))
+        })
+      }
+
+      res.status(500).json({ error: 'Erro ao atualizar produto' })
     }
   }
-);
+)
 
 /**
  * @swagger
@@ -252,43 +276,43 @@ router.put(
  *       500:
  *         description: Internal server error
  */
-router.delete("/:id", authenticate, isAdmin, async (req, res) => {
+router.delete('/:id', authenticate, isAdmin, async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.id);
+    const product = await Product.findByPk(req.params.id)
     if (!product) {
-      return res.status(404).json({ error: "Produto não encontrado" });
+      return res.status(404).json({ error: 'Produto não encontrado' })
     }
 
     // Check for dependencies before deleting
-    const { OrderItem, Favorite, Review } = await import("../models/index.js");
+    const { OrderItem, Favorite, Review } = await import('../models/index.js')
 
-    const orderItemsCount = await OrderItem.count({ where: { productId: req.params.id } });
-    const favoritesCount = await Favorite.count({ where: { productId: req.params.id } });
-    const reviewsCount = await Review.count({ where: { productId: req.params.id } });
+    const orderItemsCount = await OrderItem.count({ where: { productId: req.params.id } })
+    const favoritesCount = await Favorite.count({ where: { productId: req.params.id } })
+    const reviewsCount = await Review.count({ where: { productId: req.params.id } })
 
     if (orderItemsCount > 0) {
       return res.status(400).json({
         error: `Não é possível excluir o produto. Ele possui ${orderItemsCount} pedido(s) associado(s).`
-      });
+      })
     }
 
     if (favoritesCount > 0 || reviewsCount > 0) {
       // Delete associated favorites and reviews first
       if (favoritesCount > 0) {
-        await Favorite.destroy({ where: { productId: req.params.id } });
+        await Favorite.destroy({ where: { productId: req.params.id } })
       }
       if (reviewsCount > 0) {
-        await Review.destroy({ where: { productId: req.params.id } });
+        await Review.destroy({ where: { productId: req.params.id } })
       }
     }
 
-    await product.destroy();
-    res.status(204).end();
+    await product.destroy()
+    res.status(204).end()
   } catch (error) {
-    console.error("Erro ao deletar produto:", error);
-    res.status(500).json({ error: "Erro ao deletar produto" });
+    console.error('Erro ao deletar produto:', error)
+    res.status(500).json({ error: 'Erro ao deletar produto' })
   }
-});
+})
 
 /**
  * @swagger
@@ -362,34 +386,34 @@ router.delete("/:id", authenticate, isAdmin, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get('/', async (req, res) => {
+router.get('/', productsLimiter, async (req, res) => {
   try {
-    const { category, search, minPrice, maxPrice, sort } = req.query;
-    
-    const where = { stock: { [Op.gt]: 0 } };
-    
+    const { category, search, minPrice, maxPrice, sort } = req.query
+
+    const where = { stock: { [Op.gt]: 0 } }
+
     // Filtro por categoria
     if (category) {
-      where['$category.name$'] = category;
+      where['$category.name$'] = category
     }
-    
+
     // Filtro por texto
     if (search) {
-      where.name = { [Op.like]: `%${search}%` };
+      where.name = { [Op.like]: `%${search}%` }
     }
-    
+
     // Filtro por preço
     if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price[Op.gte] = parseFloat(minPrice);
-      if (maxPrice) where.price[Op.lte] = parseFloat(maxPrice);
+      where.price = {}
+      if (minPrice) where.price[Op.gte] = parseFloat(minPrice)
+      if (maxPrice) where.price[Op.lte] = parseFloat(maxPrice)
     }
-    
+
     // Ordenação
-    const order = [];
-    if (sort === 'price_asc') order.push(['price', 'ASC']);
-    if (sort === 'price_desc') order.push(['price', 'DESC']);
-    if (sort === 'newest') order.push(['createdAt', 'DESC']);
+    const order = []
+    if (sort === 'price_asc') order.push(['price', 'ASC'])
+    if (sort === 'price_desc') order.push(['price', 'DESC'])
+    if (sort === 'newest') order.push(['createdAt', 'DESC'])
 
     const products = await Product.findAll({
       attributes: ['id', 'name', 'price', 'images', 'stock', 'createdAt'],
@@ -402,13 +426,13 @@ router.get('/', async (req, res) => {
           attributes: ['id', 'name']
         }
       ]
-    });
-    res.json(products);
+    })
+    res.json(products)
   } catch (error) {
-    console.error('Erro ao buscar produtos:', error);
-    res.status(500).json({ error: 'Erro ao buscar produtos' });
+    console.error('Erro ao buscar produtos:', error)
+    res.status(500).json({ error: 'Erro ao buscar produtos' })
   }
-});
+})
 
 /**
  * @swagger
@@ -475,21 +499,21 @@ router.get('/:id', async (req, res) => {
           attributes: ['id', 'name']
         }
       ]
-    });
+    })
     if (!product) {
-      return res.status(404).json({ error: 'Produto não encontrado' });
+      return res.status(404).json({ error: 'Produto não encontrado' })
     }
 
     // Track product view if user is authenticated
     if (req.user && req.user.id) {
-      await behaviorService.trackProductView(req.user.id, req.params.id);
+      await behaviorService.trackProductView(req.user.id, req.params.id)
     }
 
-    res.json(product);
+    res.json(product)
   } catch (error) {
-    console.error('Erro ao buscar produto:', error);
-    res.status(500).json({ error: 'Erro ao buscar produto' });
+    console.error('Erro ao buscar produto:', error)
+    res.status(500).json({ error: 'Erro ao buscar produto' })
   }
-});
+})
 
-export default router;
+export default router

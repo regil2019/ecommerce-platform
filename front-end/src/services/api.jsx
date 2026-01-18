@@ -20,15 +20,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't force redirect to /login when the initial /auth/me check returns 401
-    const isAuthMe = error.config?.url && error.config.url.includes('/auth/me');
-    if (
-      error.response?.status === 401 &&
-      !isAuthMe &&
-      window.location.pathname !== '/login'
-    ) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+    // Only handle 401 errors for non-authentication endpoints
+    if (error.response?.status === 401) {
+      const isAuthEndpoint = error.config?.url?.includes('/auth/');
+      
+      if (!isAuthEndpoint && window.location.pathname !== '/login') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

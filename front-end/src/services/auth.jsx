@@ -27,18 +27,34 @@ export const register = async (userData) => {
     
     return response.data;
   } catch (error) {
-    const errorMsg = error.response?.data?.message || 
-                    error.response?.data?.error || 
+    let errorMsg = error.response?.data?.message ||
+                    error.response?.data?.error ||
                     error.message;
+
+    // Se for erro de validação com array de errors
+    if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+      errorMsg = error.response.data.errors.map(err => err.msg || err.message).join(', ');
+    }
+
     throw new Error(errorMsg || 'Falha no registro');
   }
 };
 
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get('/auth/me');
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+
+    const response = await api.get('/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+    }
     return null;
   }
 };

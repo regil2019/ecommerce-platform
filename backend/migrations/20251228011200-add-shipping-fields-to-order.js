@@ -1,17 +1,24 @@
 'use strict';
 
-module.exports = {
+/** @type {import('sequelize-cli').Migration} */
+export default {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Orders', 'shippingCost', {
-      type: Sequelize.FLOAT,
-      allowNull: true,
-      defaultValue: 0.0
-    });
+    // Check if shippingCost column already exists
+    const tableDescription = await queryInterface.describeTable('Orders');
+    if (!tableDescription.shippingCost) {
+      await queryInterface.addColumn('Orders', 'shippingCost', {
+        type: Sequelize.FLOAT,
+        allowNull: true,
+        defaultValue: 0.0
+      });
+    }
 
-    await queryInterface.addColumn('Orders', 'shippingMethod', {
-      type: Sequelize.ENUM('standard', 'express'),
-      allowNull: true
-    });
+    if (!tableDescription.shippingMethod) {
+      await queryInterface.addColumn('Orders', 'shippingMethod', {
+        type: Sequelize.ENUM('standard', 'express'),
+        allowNull: true
+      });
+    }
   },
 
   async down(queryInterface, Sequelize) {

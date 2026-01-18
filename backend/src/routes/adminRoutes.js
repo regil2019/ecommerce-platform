@@ -19,9 +19,9 @@ router.get('/stats', authenticate, isAdmin, async (req, res) => {
   try {
     // Calculate total sales (sum of completed orders)
     const totalSales = await Order.sum('total', {
-      where: { 
+      where: {
         status: 'completed',
-        paymentStatus: 'paid'
+        PaymentStatus: 'paid'
       }
     });
 
@@ -30,9 +30,9 @@ router.get('/stats', authenticate, isAdmin, async (req, res) => {
 
     // Count pending orders
     const pendingOrders = await Order.count({
-      where: { 
+      where: {
         status: 'pending',
-        paymentStatus: 'paid'
+        PaymentStatus: 'paid'
       }
     });
 
@@ -48,7 +48,7 @@ router.get('/stats', authenticate, isAdmin, async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao buscar estatísticas do dashboard',
       ...(process.env.NODE_ENV !== 'production' && {
         details: error.message
@@ -76,8 +76,8 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
 
     const { count, rows: users } = await User.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'email', 'role', 'address', 'createdAt'],
-      order: [['createdAt', 'DESC']],
+      attributes: ['id', 'name', 'email', 'role', 'address'],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: (parseInt(page) - 1) * parseInt(limit)
     });
@@ -93,7 +93,7 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao buscar usuários',
       ...(process.env.NODE_ENV !== 'production' && {
         details: error.message
@@ -140,7 +140,7 @@ router.patch('/users/:id/role', authenticate, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Erro ao atualizar role:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Erro ao atualizar role do usuário',
       ...(process.env.NODE_ENV !== 'production' && {
         details: error.message
@@ -165,7 +165,7 @@ router.get('/categories', authenticate, isAdmin, async (req, res) => {
 
     const { count, rows: categories } = await Category.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name'],
       order: [['name', 'ASC']],
       limit: parseInt(limit),
       offset: (parseInt(page) - 1) * parseInt(limit)
@@ -320,6 +320,58 @@ router.delete('/categories/:id', authenticate, isAdmin, async (req, res) => {
 });
 
 /**
+ * @route GET /api/admin/products
+ * @description Get all products for admin (including zero stock products)
+ * @access Private (Admin only)
+ */
+router.get('/products', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search } = req.query;
+
+    const where = {};
+
+    // Filtro por texto
+    if (search) {
+      where.name = { [Op.like]: `%${search}%` };
+    }
+
+    const { count, rows: products } = await Product.findAndCountAll({
+      attributes: ['id', 'name', 'price', 'images', 'stock'],
+      where,
+      order: [['created_at', 'DESC']],
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name']
+        }
+      ],
+      limit: parseInt(limit),
+      offset: (parseInt(page) - 1) * parseInt(limit)
+    });
+
+    res.json({
+      products,
+      totalProducts: count,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count,
+        totalPages: Math.ceil(count / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar produtos para admin:', error);
+    res.status(500).json({
+      error: 'Erro ao buscar produtos',
+      ...(process.env.NODE_ENV !== 'production' && {
+        details: error.message
+      })
+    });
+  }
+});
+
+/**
  * @route GET /api/admin/orders
  * @description Get all orders (admin only)
  * @access Private (Admin only)
@@ -332,8 +384,8 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
     if (status) where.status = status;
     if (search) {
       where[Op.or] = [
-        { '$User.name$': { [Op.like]: `%${search}%` } },
-        { '$User.email$': { [Op.like]: `%${search}%` } }
+        { '$user.name$': { [Op.like]: `%${search}%` } },
+        { '$user.email$': { [Op.like]: `%${search}%` } }
       ];
     }
 
@@ -342,6 +394,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'email']
         },
         {
@@ -352,7 +405,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
           }]
         }
       ],
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
       offset: (parseInt(page) - 1) * parseInt(limit)
     });
@@ -411,6 +464,7 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
       include: [
         {
           model: User,
+          as: 'user',
           attributes: ['id', 'name', 'email']
         },
         {
@@ -426,6 +480,105 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
     console.error('Erro ao atualizar status:', error);
     res.status(500).json({
       error: 'Erro ao atualizar status do pedido',
+      ...(process.env.NODE_ENV !== 'production' && {
+        details: error.message
+      })
+    });
+  }
+});
+
+/**
+ * @route PUT /api/admin/users/:id
+ * @description Update user profile (admin only)
+ * @access Private (Admin only)
+ */
+router.put('/users/:id', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, address } = req.body;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({
+        where: { email: email.toLowerCase().trim() }
+      });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email já está em uso' });
+      }
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (email) updateData.email = email.toLowerCase().trim();
+    if (address !== undefined) updateData.address = address ? address.trim() : null;
+
+    await user.update(updateData);
+
+    res.json({
+      message: 'Usuário atualizado com sucesso',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar usuário:', error);
+    res.status(500).json({
+      error: 'Erro ao atualizar usuário',
+      ...(process.env.NODE_ENV !== 'production' && {
+        details: error.message
+      })
+    });
+  }
+});
+
+/**
+ * @route DELETE /api/admin/users/:id
+ * @description Delete user (admin only)
+ * @access Private (Admin only)
+ */
+router.delete('/users/:id', authenticate, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Não permitir excluir o próprio usuário
+    if (user.id === req.user.id) {
+      return res.status(400).json({ error: 'Não é possível excluir seu próprio usuário' });
+    }
+
+    // Check if user has orders
+    const orderCount = await db.models.Order.count({
+      where: { userId: id }
+    });
+
+    if (orderCount > 0) {
+      return res.status(400).json({
+        error: 'Não é possível excluir usuário com pedidos associados'
+      });
+    }
+
+    await user.destroy();
+
+    res.json({
+      message: 'Usuário excluído com sucesso'
+    });
+  } catch (error) {
+    console.error('Erro ao excluir usuário:', error);
+    res.status(500).json({
+      error: 'Erro ao excluir usuário',
       ...(process.env.NODE_ENV !== 'production' && {
         details: error.message
       })

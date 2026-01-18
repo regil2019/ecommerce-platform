@@ -1,11 +1,11 @@
-import { DataTypes } from 'sequelize';
-import db from '../config/database.js';
+import { DataTypes } from 'sequelize'
+import db from '../config/database.js'
 
 const Review = db.define('Review', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true,
+    autoIncrement: true
   },
   userId: {
     type: DataTypes.INTEGER,
@@ -28,16 +28,16 @@ const Review = db.define('Review', {
     allowNull: false,
     validate: {
       min: 1,
-      max: 5,
+      max: 5
     }
   },
   comment: {
     type: DataTypes.TEXT,
-    allowNull: true,
-  },
+    allowNull: true
+  }
 }, {
   tableName: 'reviews',
-  timestamps: true,
-});
+  timestamps: true
+})
 
-export default Review;
+export default Review

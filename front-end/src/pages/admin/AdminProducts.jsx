@@ -1,290 +1,296 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import api from '../../services/api';
-import ImageUpload from '../../components/admin/ImageUpload.jsx'; // Atualização da importação
-import { Table, TableHead, TableRow, TableCell, TableBody } from '../../components/ui/Table';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Loader2 } from 'lucide-react';
-import { Skeleton } from '../../components/ui/skeleton';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  PlusCircle,
+  MoreHorizontal,
+  File,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/Button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/Table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchAdminProducts, deleteProduct } from "@/services/productApi";
+import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import ProductNew from "@/pages/admin/ProductNew";
 
-const AdminProducts = () => {
+export default function AdminProducts() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    price: 0,
-    stock: 0,
-    description: '',
-    categoryId: null,
-    images: [], // array de URLs
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
   });
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          api.get('/products'),
-          api.get('/categories'),
-        ]);
-        setProducts(productsRes.data || []);
-        setCategories(categoriesRes.data || []);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        toast.error('Falha ao carregar dados');
-      }
-    };
-    loadData();
-  }, []);
+  const safeProducts = products ?? [];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const loadProducts = useCallback(async () => {
     try {
-      const payload = {
-        name: formData.name,
-        price: formData.price,
-        stock: formData.stock,
-        description: formData.description,
-        categoryId: formData.categoryId,
-        images: formData.images,
-      };
-      if (editingId) {
-        await api.put(`/products/${editingId}`, payload);
-        toast.success('Produto atualizado!');
-      } else {
-        await api.post('/products', payload);
-        toast.success('Produto criado!');
-      }
-      const { data: productsData } = await api.get('/products');
-      setProducts(productsData);
-      setShowForm(false);
+      setLoading(true);
+      const data = await fetchAdminProducts(pagination.page, pagination.limit, searchTerm);
+      setProducts(Array.isArray(data.products) ? data.products : []);
+      setPagination((prev) => ({ ...prev, total: data.totalProducts || 0 }));
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Erro ao salvar');
+      toast.error("Erro ao carregar produtos.");
+      console.error(error);
+      setProducts([]);
+      setPagination((prev) => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.page, pagination.limit, searchTerm]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleDelete = async (id) => {
-    try {
-      await api.delete(`/products/${id}`);
-      setProducts(products.filter((p) => p.id !== id));
-      toast.success('Produto excluído!');
-    } catch (error) {
-      console.error('Delete error:', error);
-      const errorMessage = error.response?.data?.error || 'Erro ao excluir produto';
-      toast.error(errorMessage);
+    if (window.confirm("Tem certeza que deseja excluir este produto?")) {
+      try {
+        await deleteProduct(id);
+        toast.success("Produto excluído com sucesso!");
+        loadProducts();
+      } catch (error) {
+        toast.error(error.message || "Erro ao excluir produto.");
+        console.error(error);
+      }
     }
   };
 
-  const handleEdit = (product) => {
-    setFormData({
-      name: product.name,
-      price: product.price,
-      stock: product.stock,
-      description: product.description,
-      categoryId: product.categoryId,
-      images: product.images || [],
-    });
-    setEditingId(product.id);
-    setShowForm(true);
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
+  const totalPages = Math.ceil(pagination.total / pagination.limit);
+
   return (
-    <div className="p-3 max-w-7xl mx-auto mt-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Gestão de Produtos</h1>
-        <Button onClick={() => setShowForm(true)} variant="success" className="mb-4">
-          + Novo Produto
-        </Button>
-      </div>
-
-      {/* Lista de produtos */}
-      {loading ? (
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center space-x-4 p-4 border rounded">
-              <Skeleton className="w-12 h-12 rounded" />
-              <div className="space-y-2 flex-1">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-              <div className="space-x-2">
-                <Skeleton className="h-8 w-16" />
-                <Skeleton className="h-8 w-16" />
-              </div>
+    <>
+      <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <Tabs defaultValue="all">
+          <div className="flex items-center">
+            <TabsList>
+              <TabsTrigger value="all">Todos</TabsTrigger>
+              <TabsTrigger value="active">Ativos</TabsTrigger>
+              <TabsTrigger value="draft">Inativos</TabsTrigger>
+            </TabsList>
+            <div className="ml-auto flex items-center gap-2">
+              <Button size="sm" variant="outline" className="h-7 gap-1">
+                <File className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  Exportar
+                </span>
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 gap-1"
+                onClick={() => setIsProductModalOpen(true)}
+              >
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  Novo Produto
+                </span>
+              </Button>
             </div>
-          ))}
-        </div>
-      ) : (
-        <Table className="border rounded-lg overflow-hidden">
-        <TableHead className="bg-gray-100 sticky top-0">
-          <TableRow>
-            <TableCell className="w-[100px]">Imagem</TableCell>
-            <TableCell>Nome</TableCell>
-            <TableCell>Preço</TableCell>
-            <TableCell>Estoque</TableCell>
-            <TableCell>Categoria</TableCell>
-            <TableCell className="text-right">Ações</TableCell>
-          </TableRow>
-        </TableHead>
+          </div>
 
-        <TableBody>
-          {products?.length > 0 ? (
-            products.map((product) => (
-              <TableRow key={product.id} className="hover:bg-gray-50">
-                <TableCell>
-                  <div className="flex gap-1">
-                    {(product.images?.length ? product.images : [product.image || '/images/placeholder-product.jpg']).map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={img}
-                        alt={product.name}
-                        className="object-cover w-12 h-12 rounded border"
-                      />
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell>{product.category?.name || product.category}</TableCell>
-                <TableCell>
-                  <Button variant="primary" onClick={() => handleEdit(product)} className="mr-2">Editar</Button>
-                  <Button variant="destructive" onClick={() => { setDeleteId(product.id); setShowDeleteModal(true); }}>
-                    Excluir
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                Nenhum produto encontrado.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-      )}
-
-      {/* Modal do formulário */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-xl">
-            <h2 className="text-2xl font-bold mb-6">
-              {editingId ? 'Editar Produto' : 'Novo Produto'}
-            </h2>
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Nome do produto"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                {formData.name === '' && <p className="text-red-500 text-sm mt-1">Nome é obrigatório</p>}
-              </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Preço"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-                {formData.price <= 0 && <p className="text-red-500 text-sm mt-1">Preço deve ser maior que 0</p>}
-              </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Estoque"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                  required
-                />
-                {formData.stock < 0 && <p className="text-red-500 text-sm mt-1">Estoque não pode ser negativo</p>}
-              </div>
-              <div>
-                <select
-                  value={formData.categoryId || ""}
-                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  required
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-                {!formData.categoryId && <p className="text-red-500 text-sm mt-1">Categoria é obrigatória</p>}
-              </div>
-              {/* Preview das imagens e upload */}
-              {formData.images && formData.images.length > 0 && (
-                <div className="flex gap-2 mb-2">
-                  {formData.images.map((img, idx) => (
-                    <img key={idx} src={img} alt={`Preview ${idx + 1}`} className="w-24 h-24 object-cover rounded" />
-                  ))}
+          <TabsContent value="all">
+            <Card>
+              <CardHeader>
+                <CardTitle>Produtos</CardTitle>
+                <CardDescription>
+                  Gerencie seus produtos e visualize seu desempenho de vendas.
+                </CardDescription>
+                <div className="relative mt-4">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Buscar produtos..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-              )}
-              <ImageUpload onUpload={(urls) => setFormData({ ...formData, images: urls })} />
-              <div className="flex gap-4 mt-6">
-                <Button type="button" onClick={() => setShowForm(false)} variant="secondary" className="flex-1">
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="primary" className="flex-1" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin mr-2" /> : null}
-                  {editingId ? 'Atualizar' : 'Salvar'}
-                </Button>
-              </div>
-            </form>
+              </CardHeader>
+
+              <CardContent>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeader className="hidden w-[100px] sm:table-cell">
+                        <span className="sr-only">Imagem</span>
+                      </TableHeader>
+                      <TableHeader>Nome</TableHeader>
+                      <TableHeader>Status</TableHeader>
+                      <TableHeader className="hidden md:table-cell">Preço</TableHeader>
+                      <TableHeader className="hidden md:table-cell">Estoque</TableHeader>
+                      <TableHeader className="hidden md:table-cell">Categoria</TableHeader>
+                      <TableHeader>
+                        <span className="sr-only">Ações</span>
+                      </TableHeader>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          Carregando...
+                        </TableCell>
+                      </TableRow>
+                    ) : safeProducts.length > 0 ? (
+                      safeProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="hidden sm:table-cell">
+                            <img
+                              alt={product.name}
+                              className="aspect-square rounded-md object-cover"
+                              height="64"
+                              src={product.images?.[0] || "/images/placeholder.jpg"}
+                              width="64"
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>
+                            <Badge variant={product.stock > 0 ? "outline" : "secondary"}>
+                              {product.stock > 0 ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {formatCurrency(product.price)}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            {product.category?.name}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => navigate(`/admin/products/${product.id}`)}
+                                >
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(product.id)}
+                                  className="text-red-600"
+                                >
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center">
+                          Nenhum produto encontrado.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+
+              <CardFooter>
+                <div className="text-xs text-muted-foreground">
+                  Mostrando{" "}
+                  <strong>
+                    {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)}-
+                    {Math.min(pagination.page * pagination.limit, pagination.total)}
+                  </strong>{" "}
+                  de <strong>{pagination.total}</strong> produtos
+                </div>
+                <Pagination className="ml-auto">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={pagination.page === 1}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                      </Button>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={pagination.page === totalPages}
+                      >
+                        Próximo
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Modal de Novo Produto */}
+      {isProductModalOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[10001] bg-black/20 backdrop-blur-sm"
+            onClick={() => setIsProductModalOpen(false)}
+          />
+          {/* Modal Content */}
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
+            <div className="w-full max-w-3xl max-h-[80vh] bg-background/95 backdrop-blur-sm rounded-xl shadow-xl border overflow-y-auto">
+              <ProductNew onClose={() => setIsProductModalOpen(false)} />
+            </div>
           </div>
-        </div>
+        </>
       )}
-
-      {/* Modal de confirmação de exclusão */}
-      <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">Confirmar exclusão?</h2>
-          <div className="flex gap-4">
-            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => { handleDelete(deleteId); setShowDeleteModal(false); }}>Excluir</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Adicione paginação no final */}
-      <div className="mt-4 flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          Mostrando {products.length} de {totalProducts} produtos
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-            Anterior
-          </Button>
-          <Button variant="outline" onClick={() => setPage(p => p + 1)}>
-            Próximo
-          </Button>
-        </div>
-      </div>
-    </div>
+    </>
   );
-};
-
-export default AdminProducts;
+}

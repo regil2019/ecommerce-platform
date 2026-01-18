@@ -11,6 +11,9 @@ import { useAuth } from '../../hooks/useAuth';
 import ProductSuggestions from '../../components/ProductSuggestions';
 import { useState } from 'react';
 
+// Note: Stripe.js will show a warning about HTTP vs HTTPS during development.
+// This is expected behavior and the warning will disappear in production when using HTTPS.
+// See: https://stripe.com/docs/security#tls
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function Cart() {
@@ -92,8 +95,8 @@ export default function Cart() {
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                {cartItems.map(item => (
-                  <div key={item.id} className="border-b border-gray-200 p-6 last:border-b-0">
+              {cartItems.map((item, index) => (
+                <div key={`${item.id}-${index}`} className="border-b border-gray-200 p-6 last:border-b-0">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="flex-shrink-0">
                         {(item.images?.length > 1) ? (

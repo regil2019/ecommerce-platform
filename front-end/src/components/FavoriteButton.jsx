@@ -9,20 +9,42 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Check if user is logged in (either from hook or localStorage)
+  const isLoggedIn = user || localStorage.getItem('token');
+
+
+
   useEffect(() => {
-    if (user && productId) {
-      checkStatus();
-    }
+    let isMounted = true;
+
+    const loadFavoriteStatus = async () => {
+      if (user && productId) {
+        try {
+          const response = await checkFavoriteStatus(productId);
+          if (isMounted) {
+            setIsFavorite(response.isFavorite);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status do favorito:', error);
+          if (isMounted) {
+            setIsFavorite(false);
+          }
+        }
+      } else {
+        if (isMounted) {
+          setIsFavorite(false);
+        }
+      }
+    };
+
+    loadFavoriteStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, productId]);
 
-  const checkStatus = async () => {
-    try {
-      const response = await checkFavoriteStatus(productId);
-      setIsFavorite(response.isFavorite);
-    } catch (error) {
-      console.error('Erro ao verificar status do favorito:', error);
-    }
-  };
+
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault();
@@ -52,7 +74,7 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
     }
   };
 
-  if (!user) {
+  if (!isLoggedIn) {
     return null; // Não mostrar botão se usuário não estiver logado
   }
 
@@ -60,10 +82,13 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
     <button
       onClick={handleToggleFavorite}
       disabled={loading}
-      className={`absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200 ${className}`}
+      className={`absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200 ${loading ? 'opacity-50' : ''} ${className}`}
       aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+      title={loading ? 'Carregando...' : (isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos')}
     >
-      {isFavorite ? (
+      {loading ? (
+        <div className={`${size} border-2 border-gray-300 border-t-red-500 rounded-full animate-spin`} />
+      ) : isFavorite ? (
         <FaHeart className={`${size} text-red-500`} />
       ) : (
         <FaRegHeart className={`${size} text-gray-600 hover:text-red-500`} />

@@ -5,6 +5,9 @@
     "database": "ecommerce",
     "host": "127.0.0.1",
     "dialect": "mysql",
+    "dialectOptions": {
+      "initSql": "SET sql_mode='ALLOW_INVALID_DATES';"
+    },
     "pool": {
       "max": 5,
       "min": 0,

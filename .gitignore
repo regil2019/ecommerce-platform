@@ -51,3 +51,4 @@ Thumbs.db
 nginx/ssl/*.crt
 nginx/ssl/*.key
 .vercel
+melhorarAinterface
