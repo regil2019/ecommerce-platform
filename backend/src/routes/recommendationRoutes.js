@@ -18,18 +18,18 @@ router.get('/test', (req, res) => {
 })
 
 // Popular products
-router.get('/popular', recommendationsLimiter, async (req, res) => {
+router.get('/popular', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 8
 
     // Get products ordered by creation date (newest first) as a simple popularity measure
-    const { Product } = await import('../models/index.js')
+    const { Product, Category } = await import('../models/index.js')
 
     const popularProducts = await Product.findAll({
       limit,
       order: [['createdAt', 'DESC']],
       include: [{
-        model: (await import('../models/index.js')).Category,
+        model: Category,
         as: 'category'
       }]
     })
@@ -42,7 +42,8 @@ router.get('/popular', recommendationsLimiter, async (req, res) => {
     logger.error('Error getting popular products:', error)
     res.status(500).json({
       success: false,
-      message: 'Error getting popular products'
+      message: 'Error getting popular products',
+      error: error.message
     })
   }
 })

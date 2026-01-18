@@ -20,7 +20,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage })
 
 // GET /api/categories - Get all categories
-router.get('/', categoriesLimiter, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
       attributes: ['id', 'name', 'slug', 'description', 'isActive', 'image'],

@@ -11,7 +11,7 @@ async function createAdmin() {
       name: 'Admin User',
       email: 'admin@regil.com',
       address: 'Admin Address',
-      password: await bcrypt.hash('Admin123!', 10), // Senha forte
+      password: await bcrypt.hash('Admin123!', 90), // Senha forte
       role: 'admin'
     };
 
