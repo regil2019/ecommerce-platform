@@ -10,8 +10,7 @@ const PasswordReset = db.define('PasswordReset', {
   },
   token: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   userId: {
     type: DataTypes.INTEGER,

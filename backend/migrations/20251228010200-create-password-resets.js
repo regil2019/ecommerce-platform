@@ -13,7 +13,6 @@ export default {
       token: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true,
       },
       userId: {
         type: Sequelize.INTEGER,

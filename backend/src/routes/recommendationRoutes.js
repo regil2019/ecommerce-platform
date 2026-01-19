@@ -28,7 +28,8 @@ router.get('/popular', async (req, res) => {
       order: [['createdAt', 'DESC']],
       include: [{
         model: Category,
-        as: 'category'
+        as: 'category',
+        attributes: ['id', 'name', 'slug']
       }]
     })
 
@@ -57,7 +58,8 @@ router.get('/personalized', authenticate, recommendationsLimiter, async (req, re
     const allProducts = await Product.findAll({
       include: [{
         model: (await import('../models/index.js')).Category,
-        as: 'category'
+        as: 'category',
+        attributes: ['id', 'name', 'slug']
       }]
     })
 

@@ -44,7 +44,8 @@ router.post('/', authenticate, favoritesLimiter, async (req, res) => {
           include: [
             {
               model: Category,
-              as: 'category'
+              as: 'category',
+              attributes: ['id', 'name', 'slug']
             }
           ]
         }
@@ -97,7 +98,8 @@ router.get('/', authenticate, async (req, res) => {
           include: [
             {
               model: Category,
-              as: 'category'
+              as: 'category',
+              attributes: ['id', 'name', 'slug']
             }
           ]
         }
