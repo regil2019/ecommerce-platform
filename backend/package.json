@@ -19,7 +19,8 @@
     "docker:build": "docker build -t ecommerce-backend .",
     "docker:run": "docker run -p 4000:4000 ecommerce-backend",
     "seed-categories": "node create-category.js",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "run-migration": "node scripts/run-migration.js"
   },
   "dependencies": {
     "@emailjs/nodejs": "^5.0.2",
