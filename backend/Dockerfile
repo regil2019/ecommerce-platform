@@ -28,9 +28,12 @@ COPY --from=builder /app/package.json ./
 # Copy source code
 COPY --from=builder /app/server.js ./
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/config ./config
+COPY --from=builder /app/.sequelizerc ./
 
 # Expose port 4000
 EXPOSE 4000
 
-# Start the application
-CMD ["node", "server.js"]
+# Run migrations and start the application
+CMD ["sh", "-c", "npm run migrate:latest && node server.js"]
