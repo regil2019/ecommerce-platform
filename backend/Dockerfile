@@ -35,5 +35,5 @@ COPY --from=builder /app/.sequelizerc ./
 # Expose port 4000
 EXPOSE 4000
 
-# Run migrations and start the application
-CMD ["sh", "-c", "npm run migrate:latest && node server.js"]
+# Start the application (migrations should be run manually or via CI/CD)
+CMD ["node", "server.js"]
