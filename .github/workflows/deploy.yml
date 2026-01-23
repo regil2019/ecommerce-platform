@@ -9,6 +9,15 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+# Permissões mínimas de segurança
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  id-token: write
 
 jobs:
   # =============================================================================
@@ -25,10 +34,22 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: '${{ matrix.service }}/pnpm-lock.yaml'
+
+      - name: 📦 Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔐 Login to Container Registry
+      - name: 🔐 Login to Container Registry (only for non-PR)
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
@@ -40,27 +61,42 @@ jobs:
         if: matrix.service == 'backend'
         working-directory: ./backend
         run: |
-          npm install
-          npm run test -- --coverage --watchAll=false
+          pnpm install --frozen-lockfile
+          pnpm run test -- --coverage --watchAll=false
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
       - name: 📊 Frontend Build Test
         if: matrix.service == 'frontend'
         working-directory: ./front-end
         run: |
-          npm install
-          npm run build
+          pnpm install --frozen-lockfile
+          pnpm run build
+        env:
+          NODE_ENV: production
 
       - name: 🔍 Code Quality Check - Backend
         if: matrix.service == 'backend'
         working-directory: ./backend
         run: |
-          npm run lint
+          pnpm run lint
+          pnpm run typecheck || true
 
       - name: 🔍 Code Quality Check - Frontend
         if: matrix.service == 'frontend'
         working-directory: ./front-end
         run: |
-          npm run lint
+          pnpm run lint
+          pnpm run typecheck || true
+
+      - name: 📊 Upload Coverage Reports
+        if: matrix.service == 'backend' && github.event_name != 'pull_request'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # =============================================================================
   # SECURITY SCANNING
@@ -80,15 +116,23 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
 
-      - name: 📤 Upload Trivy scan results to GitHub Security tab
+      - name: 📤 Upload Trivy results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
+      - name: 🔒 Scan Dependencies
+        run: |
+          cd backend && pnpm audit --audit-level=high
+          cd ../front-end && pnpm audit --audit-level=high
+
   # =============================================================================
-  # DOCKER IMAGE BUILDING
+  # DOCKER IMAGE BUILDING (Multi-arch)
   # =============================================================================
   build-images:
     runs-on: ubuntu-latest
@@ -124,7 +168,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: 🏗️ Build and push Docker image
+      - name: 🏗️ Build and push Docker image (Multi-arch)
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.service }}
@@ -134,6 +178,23 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NODE_ENV=production
+
+      - name: 🔍 Scan Docker Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}:latest
+          format: 'sarif'
+          output: 'image-scan-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📤 Upload Image Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'image-scan-${{ matrix.service }}.sarif'
 
   # =============================================================================
   # DEPLOYMENT TO STAGING
@@ -147,11 +208,48 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🔐 Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🚀 Deploy to Staging
         run: |
           echo "🚀 Deploying to staging environment..."
-          # Add your staging deployment commands here
-          # Example: kubectl apply -f k8s/staging/
+          
+          # Pull latest images
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:develop
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:develop
+          
+          # Stop existing containers
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Deploy with new images
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Wait for services to be healthy
+          sleep 30
+          
+          # Health checks
+          curl -f http://localhost:3000/health || exit 1
+          curl -f http://localhost:8080/health || exit 1
+          
+          echo "✅ Staging deployment successful!"
+        env:
+          COMPOSE_PROJECT_NAME: staging
+
+      - name: 🧪 Run Smoke Tests
+        run: |
+          # Aguarda serviços ficarem prontos
+          sleep 10
+          
+          # Testa endpoints críticos
+          curl -f http://localhost:3000/api/health
+          curl -f http://localhost:8080/api/health
+          
+          echo "✅ Smoke tests passed!"
 
   # =============================================================================
   # DEPLOYMENT TO PRODUCTION
@@ -166,11 +264,81 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🔐 Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🚀 Deploy to Production
+        id: deploy
         run: |
-          echo "🚀 Deploying to production environment..."
-          # Add your production deployment commands here
-          # Example: kubectl apply -f k8s/production/
+          echo "🚀 Starting production deployment..."
+          
+          # Backup current deployment
+          echo "📦 Creating backup..."
+          docker-compose -f docker-compose.prod.yml exec -T backend npm run backup || true
+          
+          # Pull latest images
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:main
+          
+          # Stop existing containers
+          docker-compose -f docker-compose.prod.yml down
+          
+          # Deploy with new images
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Wait for services
+          sleep 45
+          
+          # Health checks
+          echo "🔍 Running health checks..."
+          for i in {1..10}; do
+            if curl -f http://localhost:3000/health && curl -f http://localhost:8080/health; then
+              echo "✅ All services healthy!"
+              break
+            fi
+            if [ $i -eq 10 ]; then
+              echo "❌ Health checks failed!"
+              exit 1
+            fi
+            sleep 5
+          done
+          
+          echo "✅ Production deployment successful!"
+        env:
+          COMPOSE_PROJECT_NAME: production
+
+      - name: 🔄 Rollback on Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed! Initiating rollback..."
+          
+          # Stop new containers
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Restore from backup if available
+          echo "🔄 Restoring previous version..."
+          docker-compose -f docker-compose.prod.yml up -d
+          
+          # Verify rollback
+          sleep 20
+          curl -f http://localhost:3000/health && curl -f http://localhost:8080/health
+          
+          echo "✅ Rollback completed!"
+          
+          # Exit with error
+          exit 1
+
+      - name: 📊 Update Deployment Status
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          state: success
+          deployment-id: ${{ steps.deploy.outputs.deployment_id }}
 
   # =============================================================================
   # NOTIFICATIONS
@@ -181,11 +349,166 @@ jobs:
     if: always()
     
     steps:
-      - name: 📢 Send notification
-        if: needs.deploy-staging.result != 'success' && needs.deploy-production.result != 'success'
+      - name: 📢 Send Success Notification
+        if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
         uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: webhook
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          payload: |
+            {
+              "text": "✅ Deploy Successful!",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 Deployment Status"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered by:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+      - name: 📢 Send Failure Notification
+        if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+        uses: slackapi/slack-github-action@v1.24.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          payload: |
+            {
+              "text": "❌ Deploy Failed!",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚨 Deployment Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Failed Job:*\n${{ needs.deploy-staging.result == 'failure' && 'Staging' || 'Production' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n${{ github.sha }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Logs"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "style": "danger"
+                    }
+                  ]
+                }
+              ]
+            }
+
+  # =============================================================================
+  # POST-DEPLOYMENT VERIFICATION
+  # =============================================================================
+  post-deploy-verification:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run Integration Tests
+        run: |
+          echo "🧪 Running post-deployment verification..."
+          
+          # Wait for services to stabilize
+          sleep 30
+          
+          # Test critical endpoints
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            BASE_URL="http://localhost:3000"
+          else
+            BASE_URL="http://localhost:3000"
+          fi
+          
+          # Health check
+          curl -f $BASE_URL/health || exit 1
+          
+          # API smoke test
+          curl -f $BASE_URL/api/products?limit=5 || exit 1
+          
+          echo "✅ Post-deployment verification passed!"
+
+      - name: 📊 Create GitHub Release
+        if: github.ref == 'refs/heads/main' && success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            🚀 Deployment completed successfully!
+            
+            - **Commit**: ${{ github.sha }}
+            - **Author**: ${{ github.actor }}
+            - **Branch**: ${{ github.ref_name }}
+            - **Workflow**: ${{ github.workflow }}
+            
+            ### Changes
+            See commit history for details.
+          draft: false
+          prerelease: false

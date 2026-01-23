@@ -46,6 +46,11 @@ app.use(
 app.use(express.json())
 
 /* =========================
+   URL-encoded parser
+========================= */
+app.use(express.urlencoded({ extended: true }))
+
+/* =========================
    Request logging
 ========================= */
 app.use(

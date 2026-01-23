@@ -51,4 +51,8 @@ Thumbs.db
 nginx/ssl/*.crt
 nginx/ssl/*.key
 .vercel
+
+# Documentation and study files (don't commit to GitHub)
+github-environment-setup.md
+interview-preparation-ru.md
 melhorarAinterface
