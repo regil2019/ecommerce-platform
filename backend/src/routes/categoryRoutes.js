@@ -122,7 +122,25 @@ router.post('/', authenticate, isAdmin, upload, categoryValidations, async (req,
     }
 
     console.log('💾 Creating category with data:', categoryData);
-    const category = await Category.create(categoryData)
+
+    // Use raw SQL to avoid Sequelize model issues
+    const [result] = await Category.sequelize.query(
+      'INSERT INTO categories (name, slug, description, image, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
+      {
+        replacements: [
+          categoryData.name,
+          categoryData.slug,
+          categoryData.description,
+          categoryData.image || null,
+          categoryData.isActive
+        ],
+        type: Category.sequelize.QueryTypes.INSERT
+      }
+    );
+
+    // Get the created category
+    const category = await Category.findByPk(result);
+
     res.status(201).json(category)
   } catch (error) {
     console.error('❌ Erro ao criar categoria:', error)
