@@ -14,15 +14,11 @@ const Category = db.define('Category', {
       len: {
         args: [2, 100],
         msg: 'O nome deve ter entre 2 e 100 caracteres'
-      },
-      is: {
-        args: /^[a-zA-ZÀ-ÿ\s]+$/i,
-        msg: 'O nome deve conter apenas letras e espaços'
       }
     },
     set (value) {
       if (value) {
-        this.setDataValue('name', validator.escape(value.trim()))
+        this.setDataValue('name', value.trim())
       }
     }
   },
