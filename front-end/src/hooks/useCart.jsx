@@ -3,7 +3,7 @@ import api from "../services/api";
 import { useAuth } from "./useAuth";
 
 const CartContext = createContext();
-export function CartProvider({children}) {
+export function CartProvider({ children }) {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const { user } = useAuth();
@@ -26,16 +26,19 @@ export function CartProvider({children}) {
             const backendItems = response.data || [];
 
             // Transform backend items to match frontend format
-            const transformedItems = backendItems.map(item => ({
-                id: item.productId,
-                name: item.Product?.name,
-                price: item.Product?.price,
-                image: item.Product?.images?.[0],
-                images: item.Product?.images,
-                description: item.Product?.description,
-                quantity: item.quantity,
-                cartId: item.id // Store cart item ID for updates
-            }));
+            const transformedItems = backendItems.map(item => {
+                const prod = item.product || item.Product;
+                return {
+                    id: item.productId,
+                    name: prod?.name,
+                    price: prod?.price,
+                    image: prod?.images?.[0],
+                    images: prod?.images,
+                    description: prod?.description,
+                    quantity: item.quantity,
+                    cartId: item.id // Store cart item ID for updates
+                };
+            });
 
             setCartItems(transformedItems);
         } catch (error) {
@@ -51,13 +54,13 @@ export function CartProvider({children}) {
             // Fallback: add to local state if not logged in
             setCartItems(prevItems => {
                 const existingItem = prevItems.find(item => item.id === product.id);
-                if(existingItem) {
+                if (existingItem) {
                     return prevItems.map(item => item.id === product.id
-                        ? {...item, quantity: item.quantity + 1}
+                        ? { ...item, quantity: item.quantity + 1 }
                         : item
                     )
                 }
-                return [...prevItems, {...product, quantity: 1}];
+                return [...prevItems, { ...product, quantity: 1 }];
             });
             return;
         }
@@ -76,13 +79,13 @@ export function CartProvider({children}) {
             // Fallback to local state
             setCartItems(prevItems => {
                 const existingItem = prevItems.find(item => item.id === product.id);
-                if(existingItem) {
+                if (existingItem) {
                     return prevItems.map(item => item.id === product.id
-                        ? {...item, quantity: item.quantity + 1}
+                        ? { ...item, quantity: item.quantity + 1 }
                         : item
                     )
                 }
-                return [...prevItems, {...product, quantity: 1}];
+                return [...prevItems, { ...product, quantity: 1 }];
             });
         }
     };
@@ -117,7 +120,7 @@ export function CartProvider({children}) {
             // Fallback: update local state
             setCartItems(prevItems =>
                 prevItems.map(item => item.id === productId
-                    ?{...item, quantity: Math.max(1, newQuantity)}
+                    ? { ...item, quantity: Math.max(1, newQuantity) }
                     : item
                 )
             );
@@ -132,7 +135,7 @@ export function CartProvider({children}) {
             // Fallback to local state
             setCartItems(prevItems =>
                 prevItems.map(item => item.id === productId
-                    ?{...item, quantity: Math.max(1, newQuantity)}
+                    ? { ...item, quantity: Math.max(1, newQuantity) }
                     : item
                 )
             );
@@ -161,30 +164,30 @@ export function CartProvider({children}) {
     };
 
     const total = cartItems.reduce(
-        (sum, item) => sum + (item.price * item.quantity),
+        (sum, item) => sum + ((item.price || 0) * (item.quantity || 0)),
         0
     )
 
     return (
         <CartContext.Provider
-        value = {{
-            cartItems,
-            addToCart,
-            removeFromCart,
-            updateQuantity,
-            clearCart,
-            total,
-            loading
-        }}
+            value={{
+                cartItems,
+                addToCart,
+                removeFromCart,
+                updateQuantity,
+                clearCart,
+                total,
+                loading
+            }}
         >
             {children}
         </CartContext.Provider>
     );
 }
 
-export default function useCart () {
+export default function useCart() {
     const context = useContext(CartContext);
-    if(!context){
+    if (!context) {
         throw new Error('useCart deve ser usado dentro de um CartProvider')
     }
     return context

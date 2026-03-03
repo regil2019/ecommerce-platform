@@ -1,6 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, XCircle } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 const getStatusVariant = (status) => {
   switch (status) {
@@ -19,43 +20,45 @@ const getStatusVariant = (status) => {
   }
 };
 
-const getStatusInfo = (statusType) => {
-  switch (statusType) {
-    case "pending":
-      return {
-        label: "Pedido Realizado",
-        description: "Seu pedido foi recebido.",
-      };
-    case "processing":
-      return {
-        label: "Processando",
-        description: "Seu pedido está sendo preparado.",
-      };
-    case "shipped":
-      return {
-        label: "Enviado",
-        description: "Seu pedido foi enviado.",
-      };
-    case "delivered":
-      return {
-        label: "Entregue",
-        description: "Seu pedido foi entregue.",
-      };
-    default:
-      return { label: statusType, description: "" };
-  }
-};
-
 const OrderTracking = ({ status, createdAt, updatedAt }) => {
+  const { t } = useI18n();
+
+  const getStatusInfo = (statusType) => {
+    switch (statusType) {
+      case "pending":
+        return {
+          label: t("admin.orderPlaced"),
+          description: t("admin.orderPlacedDesc"),
+        };
+      case "processing":
+        return {
+          label: t("orders.processing"),
+          description: t("admin.processingDesc"),
+        };
+      case "shipped":
+        return {
+          label: t("orders.shipped"),
+          description: t("admin.shippedDesc"),
+        };
+      case "delivered":
+        return {
+          label: t("orders.delivered"),
+          description: t("admin.deliveredDesc"),
+        };
+      default:
+        return { label: statusType, description: "" };
+    }
+  };
+
   const statuses = ["pending", "processing", "shipped", "delivered"];
   const currentIndex = statuses.indexOf(status);
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Rastreamento do Pedido</h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("admin.orderTracking")}</h3>
       <div className="relative">
         <div
-          className="absolute left-4 top-4 -bottom-4 w-0.5 bg-gray-200"
+          className="absolute left-4 top-4 -bottom-4 w-0.5 bg-border"
           aria-hidden="true"
         />
         <div className="space-y-8">
@@ -70,44 +73,42 @@ const OrderTracking = ({ status, createdAt, updatedAt }) => {
                   {isCompleted ? (
                     <CheckCircle className="h-8 w-8 text-green-500" />
                   ) : (
-                    <Circle className="h-8 w-8 text-gray-300" />
+                    <Circle className="h-8 w-8 text-muted-foreground/40" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4
-                        className={`text-md font-medium ${
-                          isCompleted || isCurrent
-                            ? "text-gray-900"
-                            : "text-gray-500"
-                        }`}
+                        className={`text-md font-medium ${isCompleted || isCurrent
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                          }`}
                       >
                         {info.label}
                       </h4>
                       <p
-                        className={`text-sm ${
-                          isCompleted || isCurrent
-                            ? "text-gray-600"
-                            : "text-gray-400"
-                        }`}
+                        className={`text-sm ${isCompleted || isCurrent
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground/60"
+                          }`}
                       >
                         {info.description}
                       </p>
                     </div>
                     {isCurrent && (
                       <Badge variant={getStatusVariant(status)}>
-                        {status}
+                        {t(`orders.statuses.${status}`)}
                       </Badge>
                     )}
                   </div>
                   {isCompleted && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {index === 0
                         ? new Date(createdAt).toLocaleDateString()
                         : index === currentIndex
-                        ? new Date(updatedAt).toLocaleDateString()
-                        : ""}
+                          ? new Date(updatedAt).toLocaleDateString()
+                          : ""}
                     </p>
                   )}
                 </div>
@@ -117,13 +118,13 @@ const OrderTracking = ({ status, createdAt, updatedAt }) => {
         </div>
       </div>
       {status === "cancelled" && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
           <div className="flex items-center space-x-3">
-            <XCircle className="h-6 w-6 text-red-500" />
+            <XCircle className="h-6 w-6 text-destructive" />
             <div>
-              <h4 className="text-red-800 font-semibold">Pedido Cancelado</h4>
-              <p className="text-red-700 text-sm mt-1">
-                Este pedido foi cancelado e não pode ser processado.
+              <h4 className="text-destructive font-semibold">{t("admin.orderCancelled")}</h4>
+              <p className="text-destructive/80 text-sm mt-1">
+                {t("admin.orderCancelledDesc")}
               </p>
             </div>
           </div>

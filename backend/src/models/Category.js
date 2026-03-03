@@ -16,7 +16,7 @@ const Category = db.define('Category', {
         msg: 'O nome deve ter entre 2 e 100 caracteres'
       }
     },
-    set (value) {
+    set(value) {
       if (value) {
         this.setDataValue('name', value.trim())
       }
@@ -48,7 +48,7 @@ const Category = db.define('Category', {
         msg: 'Descrição deve ter no máximo 1000 caracteres'
       }
     },
-    set (value) {
+    set(value) {
       if (value) {
         this.setDataValue('description', validator.escape(value.trim()))
       }
@@ -58,9 +58,14 @@ const Category = db.define('Category', {
     type: DataTypes.STRING(500),
     allowNull: true,
     validate: {
-      isUrl: {
-        msg: 'Imagem deve ser uma URL válida'
-      }
+      // isUrl removed to allow local paths
+    },
+    get() {
+      const rawValue = this.getDataValue('image');
+      if (!rawValue) return rawValue;
+      if (rawValue.startsWith('http')) return rawValue;
+      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+      return `${baseUrl}${rawValue.startsWith('/') ? '' : '/'}${rawValue}`;
     }
   },
   parentId: {
@@ -77,17 +82,14 @@ const Category = db.define('Category', {
     allowNull: false
   },
   productCount: {
-    type: DataTypes.VIRTUAL,
-    get () {
-      // This will be populated by associations
-      return this.getDataValue('productCount') || 0
-    }
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false
   }
 }, {
   tableName: 'categories',
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  underscored: true
 })
 
 // Self-referencing relationship for parent-child categories

@@ -23,6 +23,7 @@
     "run-migration": "node scripts/run-migration.js"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@emailjs/nodejs": "^5.0.2",
     "axios": "^1.13.2",
     "bcrypt": "^5.1.1",

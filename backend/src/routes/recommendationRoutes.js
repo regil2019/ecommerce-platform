@@ -41,8 +41,7 @@ router.get('/popular', async (req, res) => {
     logger.error('Error getting popular products:', error)
     res.status(500).json({
       success: false,
-      message: 'Error getting popular products',
-      error: error.message
+      message: 'Error getting popular products'
     })
   }
 })

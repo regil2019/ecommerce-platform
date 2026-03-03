@@ -1,15 +1,26 @@
+import './src/config/env.js'
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import db from "./src/config/database.js";
 import { connectRedis } from "./src/config/redis.js";
-import authRoutes from "./src/routes/authRoutes.js";
+import path from "path";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
+/* Middleware & Config */
+import { errorHandler } from "./src/middleware/errorHandler.js";
+import logger from './src/config/logger.js';
+import monitoringService from './src/services/monitoringService.js';
+import specs from './src/config/swagger.js';
+import swaggerUi from 'swagger-ui-express';
+import expressWinston from 'express-winston';
+
+/* Routes */
+// Auth routes removed - Clerk handles auth + Middleware
 import productRoutes from "./src/routes/productRoutes.js";
 import cartRoutes from "./src/routes/cartRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js";
-import { errorHandler } from "./src/middleware/errorHandler.js";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import uploadRoutes from "./src/routes/uploadRoutes.js";
 import categoryRoutes from "./src/routes/categoryRoutes.js";
 import paymentRoutes from "./src/routes/paymentRoutes.js";
@@ -18,6 +29,7 @@ import reviewRoutes from "./src/routes/reviewRoutes.js";
 import favoriteRoutes from "./src/routes/favoriteRoutes.js";
 import healthRoutes from "./src/routes/healthRoutes.js";
 import recommendationRoutes from "./src/routes/recommendationRoutes.js";
+import promotionRoutes from "./src/routes/promotionRoutes.js";
 
 dotenv.config();
 
@@ -25,47 +37,49 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 /* =========================
-   ✅ CORS ÚNICO E CORRETO
+   ✅ CORS Configuration
 ========================= */
 const allowedOrigins = [
-  process.env.FRONTEND_URL,          // produção (Vercel principal)
+  process.env.FRONTEND_URL || "http://localhost:5173",
   "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002",
   "http://localhost:5173",
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Permite requests sem origin (Postman, cron, healthcheck)
       if (!origin) return callback(null, true);
-
-      // Permite qualquer preview do Vercel
       if (origin.endsWith(".vercel.app")) {
         return callback(null, true);
       }
-
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-
-      return callback(new Error(`CORS bloqueado: ${origin}`));
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "x-requested-with"],
   })
 );
 
 /* =========================
-   Middlewares base
+   Static Files (Uploads)
 ========================= */
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+/* =========================
+   Base Middlewares
+========================= */
+app.use(
+  '/api/payment/webhook',
+  express.raw({ type: 'application/json' })
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.set("trust proxy", 1);
 
-// Configuração avançada do Helmet para segurança
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -91,43 +105,58 @@ app.use(helmet({
 }));
 
 /* =========================
-   Rate limit (produção e desenvolvimento)
+   Request Logging
 ========================= */
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentativas de login por IP
-  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: true,
-});
+app.use(
+  expressWinston.logger({
+    winstonInstance: logger,
+    meta: true,
+    msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms',
+    expressFormat: true,
+    colorize: false
+  })
+)
 
+/* =========================
+   Performance Monitoring
+========================= */
+app.use((req, res, next) => {
+  const start = Date.now()
+  monitoringService.incrementRequests()
+
+  res.on('finish', () => {
+    const duration = Date.now() - start
+    monitoringService.recordResponseTime(
+      req.originalUrl,
+      req.method,
+      duration
+    )
+    monitoringService.recordStatusCode(res.statusCode)
+
+    if (res.statusCode >= 400) {
+      monitoringService.incrementErrors()
+    }
+  })
+
+  next()
+})
+
+/* =========================
+   Rate Limiting
+========================= */
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests por IP
-  message: { error: 'Muitas requisições. Tente novamente em alguns minutos.' },
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Too many requests. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-const strictLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 requests por IP por minuto
-  message: { error: 'Limite de requisições excedido.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Aplicar rate limiting em todos os ambientes
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-app.use('/api/admin', strictLimiter);
 app.use('/api/', apiLimiter);
 
 /* =========================
-   Rotas
+   Routes
 ========================= */
-app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
@@ -139,41 +168,29 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/health", healthRoutes);
+app.use("/api", promotionRoutes);
 
 /* =========================
-   API Root endpoint
+   Swagger Documentation
+========================= */
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+/* =========================
+   Root & Health
 ========================= */
 app.get("/api", (req, res) => {
   res.json({
     message: "E-commerce API",
     version: "1.0.0",
     status: "online",
-    endpoints: {
-      auth: "/api/auth",
-      products: "/api/products",
-      categories: "/api/categories",
-      cart: "/api/cart",
-      orders: "/api/orders",
-      reviews: "/api/reviews",
-      favorites: "/api/favorites",
-      recommendations: "/api/recommendations",
-      admin: "/api/admin",
-      upload: "/api/upload",
-      payment: "/api/payment",
-      health: "/api/health"
-    },
-    documentation: "/api/health",
     timestamp: new Date().toISOString()
   });
 });
 
-/* =========================
-   Health / Status
-========================= */
 app.get("/", (req, res) => {
   res.json({
     status: "online",
-    message: "API E-commerce funcionando",
+    message: "API E-commerce is running",
   });
 });
 
@@ -182,29 +199,43 @@ app.get("/health", (req, res) => {
 });
 
 /* =========================
-   Error handler
+   404 Handler
 ========================= */
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' })
+})
+
+/* =========================
+   Error Handling
+========================= */
+app.use(
+  expressWinston.errorLogger({
+    winstonInstance: logger
+  })
+)
+
 app.use(errorHandler);
 
 /* =========================
-   Start server
+   Start Server
 ========================= */
 const startServer = async () => {
   try {
     await db.authenticate();
-    console.log("✔ Banco conectado");
+    console.log("✔ Database connected");
 
-    // Só faz sync em desenvolvimento LOCAL, não em produção/containers
+    // Only sync in local dev
     if (process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL) {
       await db.sync({ alter: true });
-      console.log("✔ Models sincronizados (dev local)");
+      console.log("✔ Models synced (alter: true)");
     }
 
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 API rodando na porta ${PORT}`);
+      console.log(`🚀 API running on port ${PORT}`);
+      console.log(`📂 Static uploads mapped to: ${path.join(process.cwd(), 'uploads')}`);
     });
   } catch (error) {
-    console.error("❌ Falha ao iniciar:", error);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 };

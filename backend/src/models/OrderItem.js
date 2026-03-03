@@ -14,9 +14,10 @@ const OrderItem = db.define('OrderItem', {
     allowNull: false,
     validate: { min: 0.01 }
   }
+}, {
+  underscored: true
 })
 
-// Relacionamentos
-OrderItem.belongsTo(Product, { foreignKey: 'productId' })
+// Association defined in models/index.js with alias 'product'
 
 export default OrderItem

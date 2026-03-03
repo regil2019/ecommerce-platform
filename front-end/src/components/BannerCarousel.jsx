@@ -3,36 +3,9 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const banners = [
-  {
-    id: 1,
-    image: "/images/banners/banner11.jpg",
-    alt: "Ofertas Especiais",
-    title: "Ofertas de Verão",
-    subtitle: "Até 50% de desconto em produtos selecionados.",
-    cta: "Ver Ofertas",
-    ctaLink: "/products?category=ofertas",
-  },
-  {
-    id: 2,
-    image: "/images/banners/banner2.jpg",
-    alt: "Novidades",
-    title: "Coleção Outono/Inverno",
-    subtitle: "As últimas tendências para a estação.",
-    cta: "Descobrir",
-    ctaLink: "/products?category=novidades",
-  },
-  {
-    id: 3,
-    image: "/images/banners/banner1.jpg",
-    alt: "Frete Grátis",
-    title: "Frete Grátis",
-    subtitle: "Em compras acima de Kz 50.000.",
-    cta: "Comprar Agora",
-    ctaLink: "/products",
-  },
-];
+import { Link } from "react-router-dom";
+import { AnimatedButton } from "./magicui/AnimatedButton";
+import { useI18n } from "../i18n";
 
 function NextArrow(props) {
   const { onClick } = props;
@@ -61,6 +34,38 @@ function PrevArrow(props) {
 }
 
 export default function BannerCarousel() {
+  const { t } = useI18n();
+
+  const banners = [
+    {
+      id: 1,
+      image: "/images/banners/banner11.jpg",
+      alt: t("banner.summerSale"),
+      title: t("banner.summerSale"),
+      subtitle: t("banner.summerSaleDesc"),
+      cta: t("banner.viewOffers"),
+      ctaLink: "/products?sort=price-asc",
+    },
+    {
+      id: 2,
+      image: "/images/banners/banner2.jpg",
+      alt: t("banner.newCollection"),
+      title: t("banner.newCollection"),
+      subtitle: t("banner.newCollectionDesc"),
+      cta: t("banner.discover"),
+      ctaLink: "/products?sort=newest",
+    },
+    {
+      id: 3,
+      image: "/images/banners/banner1.jpg",
+      alt: t("banner.freeShipping"),
+      title: t("banner.freeShipping"),
+      subtitle: t("banner.freeShippingDesc"),
+      cta: t("banner.shopNow"),
+      ctaLink: "/products",
+    },
+  ];
+
   const settings = {
     dots: true,
     infinite: true,
@@ -79,7 +84,7 @@ export default function BannerCarousel() {
         </ul>
       </div>
     ),
-    customPaging: (i) => (
+    customPaging: () => (
       <div className="h-2 w-2 rounded-full bg-white/40 transition-all duration-300 ease-in-out group-hover:bg-white/60" />
     ),
     dotsClass: "slick-dots custom-dots",
@@ -105,12 +110,11 @@ export default function BannerCarousel() {
                 <p className="my-4 max-w-prose text-lg text-white/90 drop-shadow-md">
                   {banner.subtitle}
                 </p>
-                <a
-                  href={banner.ctaLink}
-                  className="inline-block rounded-full bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-lg transition-transform duration-300 hover:scale-105 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black/50"
-                >
-                  {banner.cta}
-                </a>
+                <Link to={banner.ctaLink}>
+                  <AnimatedButton className="rounded-full bg-primary text-primary-foreground text-lg font-semibold shadow-lg">
+                    {banner.cta}
+                  </AnimatedButton>
+                </Link>
               </div>
             </div>
           </div>

@@ -18,24 +18,28 @@ import { toast } from "sonner";
 import { createProduct } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { AlertCircle, Info, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useI18n } from "@/i18n";
+import { getImageUrl } from "@/lib/utils";
 
-const productSchema = z.object({
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  slug: z.string().min(3, "Slug deve ter pelo menos 3 caracteres"),
-  price: z.coerce.number().positive("Preço deve ser positivo"),
-  stock: z.coerce.number().int().min(0, "Estoque não pode ser negativo"),
-  categoryId: z.string().min(1, "Selecione uma categoria"),
-  description: z.string().optional(),
-});
 
 export default function ProductNew({ onClose }) {
+  const { t } = useI18n();
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showTips, setShowTips] = useState(true);
+
+  const productSchema = z.object({
+    name: z.string().min(3, t("common.minLength", { count: 3 })),
+    slug: z.string().min(3, t("common.minLength", { count: 3 })),
+    price: z.coerce.number().positive(t("common.error")),
+    stock: z.coerce.number().int().min(0, t("common.error")),
+    categoryId: z.string().min(1, t("common.error")),
+    description: z.string().optional(),
+  });
 
   const {
     register,
@@ -72,26 +76,19 @@ export default function ProductNew({ onClose }) {
     setLoadingCategories(true);
     fetchCategories()
       .then((response) => {
-        console.log("🔥 CATEGORIAS BRUTAS:", response);
-        // Processa os dados para garantir que seja um array de categorias
-        // The API returns the array directly in response.data
         const categoriesArray = Array.isArray(response.data) ? response.data : [];
         setCategories(categoriesArray);
-        console.log("✅ CATEGORIAS PROCESSADAS:", categoriesArray);
       })
       .catch((error) => {
-        console.error("Erro ao carregar categorias:", error);
-        toast.error("Erro ao carregar categorias");
+        console.error("Categories load error:", error);
+        toast.error(t("common.errorLoad"));
       })
       .finally(() => setLoadingCategories(false));
   }, []);
 
   const onSubmit = async (data) => {
-    console.log("🔥 SUBMIT DISPARADO - DADOS:", data);
-    console.log("🔥 IMAGENS:", images);
-    
     if (images.length === 0) {
-      toast.error("Por favor, envie pelo menos uma imagem do produto.");
+      toast.error(t("admin.imageRequired"));
       return;
     }
 
@@ -104,16 +101,14 @@ export default function ProductNew({ onClose }) {
         stock: Number(data.stock),
         categoryId: Number(data.categoryId),
         description: data.description || "",
-        images: images.map(url => url.trim()) // Clean URLs and ensure array format
+        images: images.map((url) => url.trim()),
       };
 
-      console.log("PAYLOAD FINAL:", payload);
       await createProduct(payload);
-      toast.success("Produto criado com sucesso!");
-      // Força recarregamento da lista de produtos
+      toast.success(t("admin.productCreated"));
       window.location.href = "/admin/products";
     } catch (error) {
-      toast.error(error.message || "Erro ao criar produto");
+      toast.error(error.message || t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -123,48 +118,46 @@ export default function ProductNew({ onClose }) {
     <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary">📦 Novo Produto</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">
+            {t("admin.newProduct")}
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Preencha os detalhes do produto para adicioná-lo ao catálogo
+            {t("admin.newProductDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {showTips && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertTitle className="text-blue-800">Dicas para criar um bom produto</AlertTitle>
-              <AlertDescription className="text-blue-700 text-sm">
-                 Use nomes claros e descritivos<br />
-                 Adicione imagens de alta qualidade<br />
-                 Seja detalhado na descrição<br />
-                 Defina um preço competitivo
+            <Alert className="border-primary/20 bg-primary/5">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertTitle className="text-primary">{t("admin.productTips")}</AlertTitle>
+              <AlertDescription className="text-sm text-muted-foreground">
+                {t("admin.productTipsDesc")}
               </AlertDescription>
               <div className="mt-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 p-1 text-blue-600 hover:text-blue-800"
+                  className="h-6 p-1 text-primary hover:text-primary/80"
                   onClick={() => setShowTips(false)}
                 >
-                  <span className="text-xs">Ocultar dicas</span>
+                  <span className="text-xs">{t("common.hide")}</span>
                 </Button>
               </div>
             </Alert>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6">
-            {/* Nome e Slug */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t("common.name")} *</Label>
                 <Input
                   id="name"
                   {...register("name")}
-                  className={errors.name ? "border-red-500" : ""}
+                  className={errors.name ? "border-destructive" : ""}
                   placeholder="Ex: iPhone 15 Pro Max"
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name.message}</p>
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
                 )}
               </div>
 
@@ -173,73 +166,71 @@ export default function ProductNew({ onClose }) {
                 <Input
                   id="slug"
                   {...register("slug")}
-                  className={errors.slug ? "border-red-500" : ""}
+                  className={errors.slug ? "border-destructive" : ""}
                   placeholder="iphone-15-pro-max"
                 />
                 {errors.slug && (
-                  <p className="text-sm text-red-500">{errors.slug.message}</p>
+                  <p className="text-sm text-destructive">{errors.slug.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Descrição */}
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
+              <Label htmlFor="description">{t("admin.description")}</Label>
               <Textarea
                 id="description"
                 {...register("description")}
                 rows={4}
-                placeholder="Descreva as características do produto..."
+                placeholder={t("admin.descriptionPlaceholder")}
               />
             </div>
 
-            {/* Preço, Estoque e Categoria */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="price">Preço (R$) *</Label>
+                <Label htmlFor="price">{t("admin.price")} *</Label>
                 <Input
                   id="price"
                   type="number"
                   step="0.01"
                   {...register("price", { valueAsNumber: true })}
-                  className={errors.price ? "border-red-500" : ""}
+                  className={errors.price ? "border-destructive" : ""}
                   placeholder="0.00"
                 />
                 {errors.price && (
-                  <p className="text-sm text-red-500">{errors.price.message}</p>
+                  <p className="text-sm text-destructive">{errors.price.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="stock">Estoque *</Label>
+                <Label htmlFor="stock">{t("admin.stock")} *</Label>
                 <Input
                   id="stock"
                   type="number"
                   {...register("stock", { valueAsNumber: true })}
-                  className={errors.stock ? "border-red-500" : ""}
+                  className={errors.stock ? "border-destructive" : ""}
                   placeholder="0"
                 />
                 {errors.stock && (
-                  <p className="text-sm text-red-500">{errors.stock.message}</p>
+                  <p className="text-sm text-destructive">{errors.stock.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="categoryId">Categoria *</Label>
+                <Label htmlFor="categoryId">{t("admin.category")} *</Label>
                 {loadingCategories ? (
-                  <p className="text-sm text-muted-foreground">Carregando categorias...</p>
+                  <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
                 ) : !Array.isArray(categories) || categories.length === 0 ? (
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
-                    <p className="text-sm text-orange-800">
-                      ⚠️ Nenhuma categoria encontrada. 
-                      <Button 
-                        type="button" 
-                        variant="link" 
+                  <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      ⚠️ {t("admin.noCategories")}{" "}
+                      <Button
+                        type="button"
+                        variant="link"
                         size="sm"
-                        onClick={() => window.open('/admin/categories', '_blank')}
-                        className="h-auto p-0 ml-1 text-orange-700 hover:text-orange-900"
+                        onClick={() => window.open("/admin/categories", "_blank")}
+                        className="ml-1 h-auto p-0"
                       >
-                        Criar categorias
+                        {t("admin.createCategory")}
                       </Button>
                     </p>
                   </div>
@@ -248,91 +239,82 @@ export default function ProductNew({ onClose }) {
                     onValueChange={(value) => setValue("categoryId", value)}
                     value={watch("categoryId") || ""}
                   >
-                    <SelectTrigger className={errors.categoryId ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Selecione uma categoria" />
+                    <SelectTrigger className={errors.categoryId ? "border-destructive" : ""}>
+                      <SelectValue placeholder={t("common.selectOption")} />
                     </SelectTrigger>
                     <SelectContent className="z-[10003]">
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={String(category.id)}>
                           {category.name}
                         </SelectItem>
                       ))}
-                    </SelectContent >
+                    </SelectContent>
                   </Select>
                 )}
                 {errors.categoryId && (
-                  <p className="text-sm text-red-500">{errors.categoryId.message}</p>
+                  <p className="text-sm text-destructive">{errors.categoryId.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Upload de Imagens */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
-                  <span className="text-lg">📸</span> Imagens do Produto *
+                  {t("admin.productImages")} *
                 </Label>
                 {images.length > 0 && (
-                  <span className="text-sm text-green-600 font-medium">
-                    ✅ {images.length} imagem(ns) selecionada(s)
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                    ✅ {t("admin.imagesSelected", { count: images.length })}
                   </span>
                 )}
               </div>
 
-              <Alert className="border-yellow-200 bg-yellow-50">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <AlertDescription className="text-yellow-700 text-sm ml-2">
-                  💡 <strong>Dica:</strong> Adicione pelo menos 3-5 imagens de alta qualidade para mostrar diferentes ângulos do produto.
+              <Alert className="border-yellow-500/30 bg-yellow-500/10">
+                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <AlertDescription className="ml-2 text-sm text-yellow-700 dark:text-yellow-400">
+                  {t("admin.imageTip")}
                 </AlertDescription>
               </Alert>
 
               <ImageUpload onUpload={(files) => setImages(files)} />
 
               {images.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {images.slice(0, 3).map((image, index) => (
                     <div key={index} className="relative">
                       <img
-                        src={image}
+                        src={getImageUrl(image)}
                         alt={`Preview ${index + 1}`}
-                        className="w-20 h-20 object-cover rounded-md border-2 border-primary"
+                        className="h-20 w-20 rounded-md border-2 border-primary object-cover"
+                        loading="lazy"
                       />
                     </div>
                   ))}
                   {images.length > 3 && (
-                    <div className="w-20 h-20 bg-gray-100 rounded-md border-2 border-gray-300 flex items-center justify-center">
-                      <span className="text-sm text-gray-600">+{images.length - 3} mais</span>
+                    <div className="flex h-20 w-20 items-center justify-center rounded-md border-2 border-border bg-muted">
+                      <span className="text-sm text-muted-foreground">+{images.length - 3}</span>
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Botões */}
             <div className="flex gap-3 pt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800"
+                className="flex-1"
               >
-                Cancelar
+                {t("common.cancel")}
               </Button>
-              <button
+              <Button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1"
               >
-                {loading ? (
-                  <>
-                    <span className="mr-2">🕒</span> Criando...
-                  </>
-                ) : (
-                  <>
-                    <span className="mr-2">✨</span> Criar Produto
-                  </>
-                )}
-              </button>
+                {loading ? t("common.loading") : t("admin.createProduct")}
+              </Button>
             </div>
           </form>
         </CardContent>

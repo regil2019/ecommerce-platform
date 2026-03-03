@@ -6,14 +6,14 @@ import behaviorService from '../services/behaviorService.js'
 
 const router = express.Router()
 
-// Adicionar item (usuário logado)
+// Add item to cart (authenticated)
 router.post('/', authenticate, async (req, res) => {
-  const { quantity } = req.body
-  if (!quantity || quantity < 1) {
-    return res.status(400).json({ error: 'Quantidade invalida' })
-  }
   try {
     const { productId, quantity = 1 } = req.body
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ error: 'Invalid quantity' })
+    }
+
     const cartItem = await Cart.create({
       userId: req.user.id,
       productId,
@@ -25,79 +25,65 @@ router.post('/', authenticate, async (req, res) => {
 
     res.status(201).json(cartItem)
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao adicionar item' })
+    console.error('Cart add error:', error)
+    res.status(500).json({ error: 'Error adding item to cart' })
   }
 })
 
-// Listar itens (usuário logado)
+// List cart items (authenticated)
 router.get('/', authenticate, async (req, res) => {
   try {
     const cartItems = await Cart.findAll({
       where: { userId: req.user.id },
       include: [{
         model: Product,
+        as: 'product',
         attributes: ['id', 'name', 'price', 'images', 'description']
       }]
     })
     res.json(cartItems)
   } catch (error) {
     console.error('Cart error:', error)
-    res.status(500).json({ error: 'Erro ao buscar carrinho', details: error.message })
+    res.status(500).json({ error: 'Error fetching cart', details: error.message })
   }
 })
 
-// LEGACY: Listar itens sem autenticação (para testes)
-router.get('/public', async (req, res) => {
-  try {
-    const cartItems = await Cart.findAll({
-      where: { userId: req.user.id },
-      include: [{
-        model: Product,
-        attributes: ['id', 'name', 'price', 'images', 'description']
-      }] // Trás dados do produto associado
-    })
-    res.json(cartItems)
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar carrinho' })
-  }
-})
-
-// Atualizar quantidade (usuário logado)
+// Update quantity (authenticated)
 router.put('/:itemId', authenticate, async (req, res) => {
   try {
     const { quantity } = req.body
     const cartItem = await Cart.findOne({
       where: {
         id: req.params.itemId,
-        userId: req.user.id // Só o dono pode atualizar
+        userId: req.user.id
       }
     })
 
     if (!cartItem) {
-      return res.status(404).json({ error: 'Item não encontrado' })
+      return res.status(404).json({ error: 'Item not found' })
     }
 
     cartItem.quantity = quantity
     await cartItem.save()
     res.json(cartItem)
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar item' })
+    res.status(500).json({ error: 'Error updating item' })
   }
 })
 
-// Deletar item (usuário logado)
+// Delete item (authenticated)
 router.delete('/:itemId', authenticate, async (req, res) => {
   try {
     const cartItem = await Cart.findOne({
       where: {
         id: req.params.itemId,
-        userId: req.user.id // Só o dono pode deletar
+        userId: req.user.id
       },
-      include: [{ model: Product, attributes: ['id', 'name', 'price'] }]
+      include: [{ model: Product, as: 'product', attributes: ['id', 'name', 'price'] }]
     })
 
     if (!cartItem) {
-      return res.status(404).json({ error: 'Item não encontrado' })
+      return res.status(404).json({ error: 'Item not found' })
     }
 
     // Track cart remove behavior
@@ -106,7 +92,7 @@ router.delete('/:itemId', authenticate, async (req, res) => {
     await cartItem.destroy()
     res.status(204).end()
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao deletar item' })
+    res.status(500).json({ error: 'Error deleting item' })
   }
 })
 

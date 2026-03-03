@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useUser } from '@clerk/clerk-react';
 import {
   PlusCircle,
   MoreHorizontal,
@@ -40,12 +41,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchAdminProducts, deleteProduct } from "@/services/productApi";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ProductNew from "@/pages/admin/ProductNew";
+import { useI18n } from "@/i18n";
+
 
 export default function AdminProducts() {
+  const { t } = useI18n();
+  const { isLoaded, isSignedIn } = useUser();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -66,8 +71,8 @@ export default function AdminProducts() {
       setProducts(Array.isArray(data.products) ? data.products : []);
       setPagination((prev) => ({ ...prev, total: data.totalProducts || 0 }));
     } catch (error) {
-      toast.error("Erro ao carregar produtos.");
-      console.error(error);
+      toast.error(t("common.errorLoad"));
+      console.error("Admin products error:", error);
       setProducts([]);
       setPagination((prev) => ({ ...prev, total: 0 }));
     } finally {
@@ -76,18 +81,20 @@ export default function AdminProducts() {
   }, [pagination.page, pagination.limit, searchTerm]);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     loadProducts();
-  }, [loadProducts]);
+  }, [loadProducts, isLoaded, isSignedIn]);
 
   const handleDelete = async (id) => {
-    if (window.confirm("Tem certeza que deseja excluir este produto?")) {
+    if (window.confirm(t("admin.confirmDelete"))) {
       try {
         await deleteProduct(id);
-        toast.success("Produto excluído com sucesso!");
+        toast.success(t("admin.deleteSuccess"));
         loadProducts();
       } catch (error) {
-        toast.error(error.message || "Erro ao excluir produto.");
-        console.error(error);
+        const msg = error.response?.data?.error || error.userMessage || error.message || t("admin.deleteError");
+        toast.error(msg);
+        console.error("Delete error:", error);
       }
     }
   };
@@ -104,15 +111,15 @@ export default function AdminProducts() {
         <Tabs defaultValue="all">
           <div className="flex items-center">
             <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="active">Ativos</TabsTrigger>
-              <TabsTrigger value="draft">Inativos</TabsTrigger>
+              <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
+              <TabsTrigger value="active">{t("common.active")}</TabsTrigger>
+              <TabsTrigger value="draft">{t("common.inactive")}</TabsTrigger>
             </TabsList>
             <div className="ml-auto flex items-center gap-2">
               <Button size="sm" variant="outline" className="h-7 gap-1">
                 <File className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Exportar
+                  {t("admin.exportCSV")}
                 </span>
               </Button>
               <Button
@@ -122,7 +129,7 @@ export default function AdminProducts() {
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  Novo Produto
+                  {t("admin.newProduct")}
                 </span>
               </Button>
             </div>
@@ -131,15 +138,15 @@ export default function AdminProducts() {
           <TabsContent value="all">
             <Card>
               <CardHeader>
-                <CardTitle>Produtos</CardTitle>
-                <CardDescription>
-                  Gerencie seus produtos e visualize seu desempenho de vendas.
+                <CardTitle>{t("admin.products")}</CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  {t("common.description")}
                 </CardDescription>
                 <div className="relative mt-4">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Buscar produtos..."
+                    placeholder={t("admin.searchProducts")}
                     className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -152,15 +159,15 @@ export default function AdminProducts() {
                   <TableHead>
                     <TableRow>
                       <TableHeader className="hidden w-[100px] sm:table-cell">
-                        <span className="sr-only">Imagem</span>
+                        <span className="sr-only">{t("common.image")}</span>
                       </TableHeader>
-                      <TableHeader>Nome</TableHeader>
-                      <TableHeader>Status</TableHeader>
-                      <TableHeader className="hidden md:table-cell">Preço</TableHeader>
-                      <TableHeader className="hidden md:table-cell">Estoque</TableHeader>
-                      <TableHeader className="hidden md:table-cell">Categoria</TableHeader>
+                      <TableHeader>{t("common.name")}</TableHeader>
+                      <TableHeader>{t("common.status")}</TableHeader>
+                      <TableHeader className="hidden md:table-cell">{t("admin.price")}</TableHeader>
+                      <TableHeader className="hidden md:table-cell">{t("admin.stock")}</TableHeader>
+                      <TableHeader className="hidden md:table-cell">{t("admin.category")}</TableHeader>
                       <TableHeader>
-                        <span className="sr-only">Ações</span>
+                        <span className="sr-only">{t("common.actions")}</span>
                       </TableHeader>
                     </TableRow>
                   </TableHead>
@@ -168,8 +175,8 @@ export default function AdminProducts() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
-                          Carregando...
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          {t("common.loading")}
                         </TableCell>
                       </TableRow>
                     ) : safeProducts.length > 0 ? (
@@ -180,14 +187,15 @@ export default function AdminProducts() {
                               alt={product.name}
                               className="aspect-square rounded-md object-cover"
                               height="64"
-                              src={product.images?.[0] || "/images/placeholder.jpg"}
+                              src={getImageUrl(product.images?.[0])}
                               width="64"
+                              loading="lazy"
                             />
                           </TableCell>
                           <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>
                             <Badge variant={product.stock > 0 ? "outline" : "secondary"}>
-                              {product.stock > 0 ? "Ativo" : "Inativo"}
+                              {product.stock > 0 ? t("common.active") : t("common.inactive")}
                             </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
@@ -202,21 +210,26 @@ export default function AdminProducts() {
                               <DropdownMenuTrigger asChild>
                                 <Button aria-haspopup="true" size="icon" variant="ghost">
                                   <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Toggle menu</span>
+                                  <span className="sr-only">{t("common.actions")}</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
                                 <DropdownMenuItem
-                                  onClick={() => navigate(`/admin/products/${product.id}`)}
+                                  onClick={() => {
+                                    alert(t("common.featureComingSoon") || "Edit feature coming soon!");
+                                    // Future: open modal in edit mode
+                                    // setEditingProduct(product);
+                                    // setIsProductModalOpen(true);
+                                  }}
                                 >
-                                  Editar
+                                  {t("common.edit")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(product.id)}
-                                  className="text-red-600"
+                                  className="text-destructive"
                                 >
-                                  Excluir
+                                  {t("common.delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -225,8 +238,8 @@ export default function AdminProducts() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center">
-                          Nenhum produto encontrado.
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          {t("common.noResults")}
                         </TableCell>
                       </TableRow>
                     )}
@@ -236,12 +249,10 @@ export default function AdminProducts() {
 
               <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                  Mostrando{" "}
-                  <strong>
-                    {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)}-
-                    {Math.min(pagination.page * pagination.limit, pagination.total)}
-                  </strong>{" "}
-                  de <strong>{pagination.total}</strong> produtos
+                  {t("common.page", {
+                    current: pagination.page,
+                    total: totalPages || 1,
+                  })}
                 </div>
                 <Pagination className="ml-auto">
                   <PaginationContent>
@@ -253,7 +264,7 @@ export default function AdminProducts() {
                         disabled={pagination.page === 1}
                       >
                         <ChevronLeft className="h-4 w-4" />
-                        Anterior
+                        {t("common.previous")}
                       </Button>
                     </PaginationItem>
                     <PaginationItem>
@@ -263,7 +274,7 @@ export default function AdminProducts() {
                         onClick={() => handlePageChange(pagination.page + 1)}
                         disabled={pagination.page === totalPages}
                       >
-                        Próximo
+                        {t("common.next")}
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </PaginationItem>
@@ -275,17 +286,15 @@ export default function AdminProducts() {
         </Tabs>
       </main>
 
-      {/* Modal de Novo Produto */}
+      {/* New Product Modal */}
       {isProductModalOpen && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-[10001] bg-black/20 backdrop-blur-sm"
             onClick={() => setIsProductModalOpen(false)}
           />
-          {/* Modal Content */}
           <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl max-h-[80vh] bg-background/95 backdrop-blur-sm rounded-xl shadow-xl border overflow-y-auto">
+            <div className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-border bg-card shadow-xl">
               <ProductNew onClose={() => setIsProductModalOpen(false)} />
             </div>
           </div>

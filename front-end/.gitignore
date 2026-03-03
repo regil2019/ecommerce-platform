@@ -3,3 +3,6 @@ node_modules/
 dist/
 .env
 .env.local
+
+# Windows WSL artifacts
+*Zone.Identifier

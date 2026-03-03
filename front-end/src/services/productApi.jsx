@@ -1,5 +1,6 @@
 import api from './api.jsx';
 
+// Fetch public products (with stock > 0 filter on backend)
 export const fetchProducts = async (page = 1, limit = 10, search = '') => {
   try {
     const params = { page, limit };
@@ -13,6 +14,7 @@ export const fetchProducts = async (page = 1, limit = 10, search = '') => {
   }
 };
 
+// Fetch all products for admin (includes out-of-stock)
 export const fetchAdminProducts = async (page = 1, limit = 10, search = '') => {
   try {
     const params = { page, limit };
@@ -38,13 +40,7 @@ export const fetchProductById = async (id) => {
 
 export const createProduct = async (productData) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await api.post('/products', productData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await api.post('/products', productData);
     return response.data;
   } catch (error) {
     console.error('Error creating product:', error.response?.data || error.message);
@@ -75,8 +71,8 @@ export const deleteProduct = async (id) => {
 export const uploadProductImages = async (id, images) => {
   try {
     const formData = new FormData();
-    images.forEach((image, index) => {
-      formData.append(`images`, image);
+    images.forEach((image) => {
+      formData.append('images', image);
     });
 
     const response = await api.post(`/products/${id}/images`, formData, {

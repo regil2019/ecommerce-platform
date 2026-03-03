@@ -6,44 +6,44 @@ import Favorite from './Favorite.js'
 import Order from './Order.js'
 import OrderItem from './OrderItem.js'
 import Cart from './Cart.js'
-import PasswordReset from './PasswordReset.js'
 import UserBehavior from './UserBehavior.js'
+import Promotion from './Promotion.js'
 
 // Configurar associações
-Category.hasMany(Product, { foreignKey: 'categoryId', as: 'products' })
-Product.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' })
+Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' })
+Product.belongsTo(Category, { foreignKey: 'category_id', as: 'category' })
 
 // Review associations
-User.hasMany(Review, { foreignKey: 'userId', as: 'reviews' })
-Review.belongsTo(User, { foreignKey: 'userId', as: 'user' })
-Product.hasMany(Review, { foreignKey: 'productId', as: 'reviews' })
-Review.belongsTo(Product, { foreignKey: 'productId', as: 'product' })
+User.hasMany(Review, { foreignKey: 'user_id', as: 'reviews', onDelete: 'CASCADE' })
+Review.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+Product.hasMany(Review, { foreignKey: 'product_id', as: 'reviews', onDelete: 'CASCADE' })
+Review.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 // Favorite associations
-User.hasMany(Favorite, { foreignKey: 'userId', as: 'favorites' })
-Favorite.belongsTo(User, { foreignKey: 'userId', as: 'user' })
-Product.hasMany(Favorite, { foreignKey: 'productId', as: 'favorites' })
-Favorite.belongsTo(Product, { foreignKey: 'productId', as: 'product' })
+User.hasMany(Favorite, { foreignKey: 'user_id', as: 'favorites', onDelete: 'CASCADE' })
+Favorite.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+Product.hasMany(Favorite, { foreignKey: 'product_id', as: 'favorites', onDelete: 'CASCADE' })
+Favorite.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 // Order associations
-User.hasMany(Order, { foreignKey: 'userId', as: 'orders' })
-Order.belongsTo(User, { foreignKey: 'userId', as: 'user' })
-Order.hasMany(OrderItem, { foreignKey: 'orderId', as: 'orderItems' })
-OrderItem.belongsTo(Order, { foreignKey: 'orderId', as: 'order' })
-Product.hasMany(OrderItem, { foreignKey: 'productId', as: 'orderItems' })
-OrderItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' })
+User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' })
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'orderItems', onDelete: 'CASCADE' })
+OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' })
+Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'orderItems', onDelete: 'RESTRICT' }) // Prevent deleting products with orders
+OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 // Cart associations
-User.hasMany(Cart, { foreignKey: 'userId', as: 'cartItems' })
-Cart.belongsTo(User, { foreignKey: 'userId', as: 'user' })
-Product.hasMany(Cart, { foreignKey: 'productId', as: 'cartItems' })
-Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product' })
+User.hasMany(Cart, { foreignKey: 'user_id', as: 'cartItems', onDelete: 'CASCADE' })
+Cart.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+Product.hasMany(Cart, { foreignKey: 'product_id', as: 'cartItems', onDelete: 'CASCADE' })
+Cart.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 // UserBehavior associations
-User.hasMany(UserBehavior, { foreignKey: 'userId', as: 'behaviors' })
-UserBehavior.belongsTo(User, { foreignKey: 'userId', as: 'user' })
-Product.hasMany(UserBehavior, { foreignKey: 'productId', as: 'behaviors' })
-UserBehavior.belongsTo(Product, { foreignKey: 'productId', as: 'product' })
+User.hasMany(UserBehavior, { foreignKey: 'user_id', as: 'behaviors', onDelete: 'CASCADE' })
+UserBehavior.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+Product.hasMany(UserBehavior, { foreignKey: 'product_id', as: 'behaviors', onDelete: 'CASCADE' })
+UserBehavior.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 export {
   Product,
@@ -54,6 +54,6 @@ export {
   Order,
   OrderItem,
   Cart,
-  PasswordReset,
-  UserBehavior
+  UserBehavior,
+  Promotion
 }

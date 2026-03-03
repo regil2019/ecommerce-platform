@@ -1,24 +1,24 @@
 import api from './api';
 
-// Buscar reviews de um produto
+// Fetch reviews for a product
 export const getProductReviews = async (productId) => {
   const response = await api.get(`/reviews/product/${productId}`);
   return response.data;
 };
 
-// Criar uma nova review
+// Create a new review
 export const createReview = async (reviewData) => {
   const response = await api.post('/reviews', reviewData);
   return response.data;
 };
 
-// Atualizar uma review
+// Update a review
 export const updateReview = async (reviewId, reviewData) => {
   const response = await api.put(`/reviews/${reviewId}`, reviewData);
   return response.data;
 };
 
-// Deletar uma review
+// Delete a review
 export const deleteReview = async (reviewId) => {
   await api.delete(`/reviews/${reviewId}`);
 };

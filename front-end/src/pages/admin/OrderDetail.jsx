@@ -13,7 +13,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
@@ -24,17 +23,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
 import { fetchOrderById, updateOrderStatus } from "@/services/orderApi";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n";
 
 const getStatusVariant = (status) => {
   switch (status) {
@@ -54,6 +47,7 @@ const getStatusVariant = (status) => {
 };
 
 export default function AdminOrderDetail() {
+  const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -65,8 +59,8 @@ export default function AdminOrderDetail() {
       const data = await fetchOrderById(id);
       setOrder(data);
     } catch (error) {
-      toast.error("Erro ao carregar detalhes do pedido.");
-      console.error(error);
+      toast.error(t("common.errorLoad"));
+      console.error("Order detail error:", error);
       navigate("/admin/orders");
     } finally {
       setLoading(false);
@@ -80,26 +74,26 @@ export default function AdminOrderDetail() {
   const handleStatusChange = async (newStatus) => {
     try {
       await updateOrderStatus(id, newStatus);
-      toast.success("Status do pedido atualizado com sucesso!");
+      toast.success(t("admin.statusUpdated"));
       loadOrder();
     } catch (error) {
-      toast.error("Erro ao atualizar o status do pedido.");
-      console.error(error);
+      toast.error(t("common.error"));
+      console.error("Status update error:", error);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Carregando...
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        {t("common.loading")}
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        Pedido não encontrado.
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        {t("common.noResults")}
       </div>
     );
   }
@@ -115,29 +109,29 @@ export default function AdminOrderDetail() {
             onClick={() => navigate("/admin/orders")}
           >
             <ChevronLeft className="h-4 w-4" />
-            <span className="sr-only">Voltar</span>
+            <span className="sr-only">{t("common.back")}</span>
           </Button>
-          <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-            Pedido #{order.id}
+          <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight text-foreground sm:grow-0">
+            {t("orders.order")} #{order.id}
           </h1>
           <Badge variant={getStatusVariant(order.status)} className="ml-auto sm:ml-0">
             {order.status}
           </Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
             <Button variant="outline" size="sm">
-              Imprimir
+              {t("common.print")}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="icon" variant="outline" className="h-8 w-8">
                   <MoreVertical className="h-3.5 w-3.5" />
-                  <span className="sr-only">Mais</span>
+                  <span className="sr-only">{t("common.more")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Exportar</DropdownMenuItem>
+                <DropdownMenuItem>{t("admin.exportCSV")}</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Excluir</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive">{t("common.delete")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -148,7 +142,7 @@ export default function AdminOrderDetail() {
               <CardHeader className="flex flex-row items-start bg-muted/50">
                 <div className="grid gap-0.5">
                   <CardTitle className="group flex items-center gap-2 text-lg">
-                    Pedido {order.id}
+                    {t("orders.order")} {order.id}
                     <Button
                       size="icon"
                       variant="outline"
@@ -156,11 +150,11 @@ export default function AdminOrderDetail() {
                       onClick={() => navigator.clipboard.writeText(order.id)}
                     >
                       <Copy className="h-3 w-3" />
-                      <span className="sr-only">Copiar ID do Pedido</span>
+                      <span className="sr-only">{t("common.copy")}</span>
                     </Button>
                   </CardTitle>
                   <CardDescription>
-                    Data: {formatDate(order.createdAt)}
+                    {t("orders.date")}: {formatDate(order.createdAt)}
                   </CardDescription>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
@@ -168,34 +162,24 @@ export default function AdminOrderDetail() {
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="outline" className="h-8 w-8">
                         <MoreVertical className="h-3.5 w-3.5" />
-                        <span className="sr-only">Mais</span>
+                        <span className="sr-only">{t("common.more")}</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onSelect={() => handleStatusChange("pending")}
-                      >
-                        Marcar como Pendente
+                      <DropdownMenuItem onSelect={() => handleStatusChange("pending")}>
+                        {t("orders.markAs", { status: t("orders.pending") })}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => handleStatusChange("processing")}
-                      >
-                        Marcar como Processando
+                      <DropdownMenuItem onSelect={() => handleStatusChange("processing")}>
+                        {t("orders.markAs", { status: t("orders.processing") })}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => handleStatusChange("shipped")}
-                      >
-                        Marcar como Enviado
+                      <DropdownMenuItem onSelect={() => handleStatusChange("shipped")}>
+                        {t("orders.markAs", { status: t("orders.shipped") })}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => handleStatusChange("delivered")}
-                      >
-                        Marcar como Entregue
+                      <DropdownMenuItem onSelect={() => handleStatusChange("delivered")}>
+                        {t("orders.markAs", { status: t("orders.delivered") })}
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={() => handleStatusChange("cancelled")}
-                      >
-                        Marcar como Cancelado
+                      <DropdownMenuItem onSelect={() => handleStatusChange("cancelled")}>
+                        {t("orders.markAs", { status: t("orders.cancelled") })}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -203,13 +187,10 @@ export default function AdminOrderDetail() {
               </CardHeader>
               <CardContent className="p-6 text-sm">
                 <div className="grid gap-3">
-                  <div className="font-semibold">Detalhes do Pedido</div>
+                  <div className="font-semibold text-foreground">{t("orders.orderDetails")}</div>
                   <ul className="grid gap-3">
                     {order.orderItems?.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex items-center justify-between"
-                      >
+                      <li key={item.id} className="flex items-center justify-between">
                         <span className="text-muted-foreground">
                           {item.product.name} x <span>{item.quantity}</span>
                         </span>
@@ -220,15 +201,15 @@ export default function AdminOrderDetail() {
                   <Separator className="my-2" />
                   <ul className="grid gap-3">
                     <li className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t("checkout.subtotal")}</span>
                       <span>{formatCurrency(order.total)}</span>
                     </li>
                     <li className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Frete</span>
+                      <span className="text-muted-foreground">{t("checkout.shipping")}</span>
                       <span>{formatCurrency(0)}</span>
                     </li>
                     <li className="flex items-center justify-between font-semibold">
-                      <span className="text-muted-foreground">Total</span>
+                      <span className="text-muted-foreground">{t("common.total")}</span>
                       <span>{formatCurrency(order.total)}</span>
                     </li>
                   </ul>
@@ -239,11 +220,11 @@ export default function AdminOrderDetail() {
           <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
             <Card className="bg-muted/50">
               <CardHeader>
-                <CardTitle>Cliente</CardTitle>
+                <CardTitle>{t("orders.customer")}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="grid gap-2">
-                  <div className="font-semibold">
+                  <div className="font-semibold text-foreground">
                     {order.user?.name}
                   </div>
                   <div className="text-muted-foreground">
@@ -254,7 +235,7 @@ export default function AdminOrderDetail() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Informações de Envio</CardTitle>
+                <CardTitle>{t("orders.shippingInfo")}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="flex items-start gap-2">
@@ -269,7 +250,7 @@ export default function AdminOrderDetail() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Pagamento</CardTitle>
+                <CardTitle>{t("orders.payment")}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm">
                 <div className="flex items-center gap-2">

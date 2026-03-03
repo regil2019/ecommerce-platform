@@ -3,40 +3,40 @@ import api from './api';
 export const login = async (credentials) => {
   try {
     const response = await api.post('/auth/login', credentials);
-    
+
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Falha no login');
+      throw new Error(response.data.message || 'Login failed');
     }
-    
+
     return response.data;
   } catch (error) {
-    const errorMsg = error.response?.data?.message || 
-                    error.response?.data?.error || 
-                    error.message;
-    throw new Error(errorMsg || 'Falha no login');
+    const errorMsg = error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message;
+    throw new Error(errorMsg || 'Login failed');
   }
 };
 
 export const register = async (userData) => {
   try {
     const response = await api.post('/auth/register', userData);
-    
+
     if (!response.data.success) {
-      throw new Error(response.data.message || 'Falha no registro');
+      throw new Error(response.data.message || 'Registration failed');
     }
-    
+
     return response.data;
   } catch (error) {
     let errorMsg = error.response?.data?.message ||
-                    error.response?.data?.error ||
-                    error.message;
+      error.response?.data?.error ||
+      error.message;
 
-    // Se for erro de validação com array de errors
+    // Handle validation error arrays
     if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
       errorMsg = error.response.data.errors.map(err => err.msg || err.message).join(', ');
     }
 
-    throw new Error(errorMsg || 'Falha no registro');
+    throw new Error(errorMsg || 'Registration failed');
   }
 };
 

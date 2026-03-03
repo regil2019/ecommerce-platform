@@ -3,12 +3,37 @@ import { body, validationResult } from 'express-validator'
 import Category from '../models/Category.js'
 import { authenticate, isAdmin } from '../middleware/authMiddleware.js'
 import multer from 'multer'
-import { CloudinaryStorage } from 'multer-storage-cloudinary'
-import cloudinary from '../config/cloudinary.js'
 import logger from '../config/logger.js'
 import { generateSlug, sanitizeInput } from '../utils/helpers.js'
+import path from 'path'
+import crypto from 'crypto'
+import fs from 'fs'
 
-// Validações comuns
+const router = express.Router()
+
+// Ensure upload directory exists
+const uploadDir = 'uploads'
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
+// Configure local disk storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir)
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname)}`
+    cb(null, uniqueName)
+  }
+})
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+})
+
+// Validations
 const categoryValidations = [
   body('name')
     .trim()
@@ -17,7 +42,6 @@ const categoryValidations = [
   body('slug')
     .optional()
     .trim()
-    .isLength({ min: 2, max: 150 }).withMessage('Slug deve ter entre 2 e 150 caracteres')
     .matches(/^[a-z0-9-]+$/).withMessage('Slug deve conter apenas letras minúsculas, números e hífens'),
   body('description')
     .optional()
@@ -27,17 +51,7 @@ const categoryValidations = [
     .optional()
 ]
 
-const router = express.Router()
-
-// Configure multer to handle both file uploads and regular form data
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-}).any()
-
-// GET /api/categories - Get all categories (public)
+// GET /api/categories - Get all categories
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
@@ -51,186 +65,94 @@ router.get('/', async (req, res) => {
   }
 })
 
-// POST /api/categories - Create a new category (Admin only)
-router.post('/', authenticate, isAdmin, upload, categoryValidations, async (req, res) => {
+// POST /api/categories - Create category (Admin)
+router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidations, async (req, res) => {
   try {
-    console.log('📥 Category creation request received');
-    console.log('📋 Request body:', req.body);
-    console.log('📎 Request files:', req.files);
-
-    // Sanitize inputs
-    const sanitizedBody = sanitizeInput(req.body)
-    let { name, slug, description, isActive } = sanitizedBody
-    const image = req.files?.find(file => file.fieldname === 'image')
-
-    // Validate request
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-      logger.warn('Validation errors', { errors: errors.array() })
       return res.status(422).json({ errors: errors.array() })
     }
 
-    // Check if category already exists by name
-    const existingCategory = await Category.findOne({
-      where: { name: name.trim() }
-    })
+    const { name, slug, description, isActive } = req.body
 
+    // Check if category exists
+    const existingCategory = await Category.findOne({ where: { name: name.trim() } })
     if (existingCategory) {
       return res.status(409).json({ error: 'Categoria com este nome já existe' })
     }
 
-    // Generate slug if not provided
     const finalSlug = slug || generateSlug(name)
-
-    // Check if slug already exists
-    const existingSlug = await Category.findOne({
-      where: { slug: finalSlug }
-    })
-
+    const existingSlug = await Category.findOne({ where: { slug: finalSlug } })
     if (existingSlug) {
-      return res.status(409).json({ error: 'Slug já está em uso. Escolha um slug diferente.' })
+      return res.status(409).json({ error: 'Slug já está em uso' })
     }
 
-    const categoryData = {
+    // Handle image
+    let imageUrl = null
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`
+    } else if (req.body.image) {
+      imageUrl = req.body.image // Allow image URL string
+    }
+
+    const category = await Category.create({
       name: name.trim(),
       slug: finalSlug,
       description: description || '',
-      isActive: isActive === 'true' || isActive === true
-    }
-
-    // If image is uploaded, upload to Cloudinary
-    if (image) {
-      try {
-        const result = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'categories',
-              allowed_formats: ['jpg', 'jpeg', 'png']
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          uploadStream.end(image.buffer);
-        });
-        categoryData.image = result.secure_url;
-      } catch (uploadError) {
-        console.error('Erro ao fazer upload da imagem:', uploadError);
-        // Continue without image
-      }
-    }
-
-    console.log('💾 Creating category with data:', categoryData);
-
-    // Use raw SQL to avoid Sequelize model issues
-    const [result] = await Category.sequelize.query(
-      'INSERT INTO categories (name, slug, description, image, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())',
-      {
-        replacements: [
-          categoryData.name,
-          categoryData.slug,
-          categoryData.description,
-          categoryData.image || null,
-          categoryData.isActive
-        ],
-        type: Category.sequelize.QueryTypes.INSERT
-      }
-    );
-
-    // Get the created category
-    const category = await Category.findByPk(result);
+      isActive: isActive === 'true' || isActive === true,
+      image: imageUrl
+    })
 
     res.status(201).json(category)
   } catch (error) {
-    console.error('❌ Erro ao criar categoria:', error)
-    console.error('🔍 Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    })
-    res.status(500).json({ error: 'Erro ao criar categoria', details: error.message })
+    console.error('Erro ao criar categoria:', error)
+    res.status(500).json({ error: 'Erro ao criar categoria' })
   }
 })
 
-// PUT /api/categories/:id - Update a category (Admin only)
-router.put('/:id',
-  authenticate,
-  isAdmin,
-  upload,
-  categoryValidations,
-  async (req, res) => {
+// PUT /api/categories/:id - Update category (Admin)
+router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValidations, async (req, res) => {
   try {
     const { id } = req.params
-    console.log('📎 Request files:', req.files);
-    // Sanitize inputs
-    const sanitizedBody = sanitizeInput(req.body)
-    let { name, slug, description, isActive } = sanitizedBody
-    const image = req.files?.find(file => file.fieldname === 'image')
-
-    // Validate request
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-      logger.warn('Validation errors in update', { errors: errors.array() })
       return res.status(422).json({ errors: errors.array() })
     }
 
-    const categoryData = {
-      name: name.trim(),
-      slug: slug || name.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
-      description: description || '',
-      isActive: isActive === 'true' || isActive === true
-    }
+    const { name, slug, description, isActive } = req.body
+    const category = await Category.findByPk(id)
 
-    // If image is uploaded, upload to Cloudinary
-    if (image) {
-      try {
-        const result = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'categories',
-              allowed_formats: ['jpg', 'jpeg', 'png']
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          uploadStream.end(image.buffer);
-        });
-        categoryData.image = result.secure_url;
-      } catch (uploadError) {
-        console.error('Erro ao fazer upload da imagem:', uploadError);
-        // Continue without image
-      }
-    }
-
-    const [updated] = await Category.update(categoryData, {
-      where: { id }
-    })
-
-    if (updated === 0) {
+    if (!category) {
       return res.status(404).json({ error: 'Categoria não encontrada' })
     }
 
-    const updatedCategory = await Category.findByPk(id)
-    res.json(updatedCategory)
+    // Handle updates
+    category.name = name.trim()
+    category.slug = slug || generateSlug(name)
+    category.description = description || ''
+    category.isActive = isActive === 'true' || isActive === true
+
+    if (req.file) {
+      category.image = `/uploads/${req.file.filename}`
+    } else if (req.body.image !== undefined) {
+      category.image = req.body.image // Update if provided string, or clear if empty string
+    }
+
+    await category.save()
+    res.json(category)
   } catch (error) {
     console.error('Erro ao atualizar categoria:', error)
     res.status(500).json({ error: 'Erro ao atualizar categoria' })
   }
 })
 
-// DELETE /api/categories/:id - Delete a category (Admin only)
+// DELETE /api/categories/:id
 router.delete('/:id', authenticate, isAdmin, async (req, res) => {
   try {
     const { id } = req.params
+    const deleted = await Category.destroy({ where: { id } })
 
-    const deleted = await Category.destroy({
-      where: { id }
-    })
-
-    if (deleted === 0) {
+    if (!deleted) {
       return res.status(404).json({ error: 'Categoria não encontrada' })
     }
 

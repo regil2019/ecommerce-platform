@@ -1,4 +1,4 @@
-# Multi-stage build for production deployment on Koyeb
+# Multi-stage build for production deployment
 
 # First stage: Dependencies and build
 FROM node:18-alpine AS builder
@@ -6,16 +6,22 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
 
-# Install dependencies
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Install dependencies — prefer pnpm if lockfile exists, fall back to npm
+RUN if [ -f pnpm-lock.yaml ]; then \
+    npm install -g pnpm && \
+    pnpm install --frozen-lockfile; \
+    else \
+    npm ci --omit=dev || npm install --omit=dev; \
+    fi
 
 # Copy source code
 COPY . .
 
-# Second stage: Runtime
-FROM node:18-alpine AS runtime
+# Production stage
+FROM node:18-alpine AS production
 
 WORKDIR /app
 
@@ -32,8 +38,25 @@ COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/config ./config
 COPY --from=builder /app/.sequelizerc ./
 
+# Development stage (same as production but with all deps)
+FROM node:18-alpine AS development
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+RUN if [ -f pnpm-lock.yaml ]; then \
+    npm install -g pnpm && \
+    pnpm install; \
+    else \
+    npm install; \
+    fi
+
+COPY . .
+
 # Expose port 4000
 EXPOSE 4000
 
-# Start the application (migrations should be run manually or via CI/CD)
+# Start the application
 CMD ["node", "server.js"]

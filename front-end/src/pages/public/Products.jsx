@@ -1,259 +1,256 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductCard from "../../components/ProductCard";
 import { fetchCategories } from "../../services/categoryApi";
 import api from "../../services/api";
-import { formatCurrency } from "../../lib/utils";
 import { Skeleton } from "../../components/ui/skeleton";
 import { Button } from "../../components/ui/Button";
-import { FiFilter, FiX, FiSearch } from "react-icons/fi";
+import { Filter, X, Search } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
+import { useI18n } from "../../i18n";
+import { Pagination } from "../../components/Pagination";
 
 const Products = ({ searchTerm }) => {
+  const { t } = useI18n();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [sortOrder, setSortOrder] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [productsPerPage] = useState(12);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read params
+  const selectedCategory = searchParams.get("category") || "";
+  const sortOrder = searchParams.get("sort") || "";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = 12;
+
+  const updateParams = (updates) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!value) {
+          next.delete(key);
+        } else {
+          next.set(key, String(value));
+        }
+      });
+      return next;
+    });
+  };
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadCategories = async () => {
+      try {
+        const response = await fetchCategories();
+        // API returns array directly in response.data
+        if (Array.isArray(response.data)) {
+          setCategories(response.data);
+        } else if (response.data && Array.isArray(response.data.data)) {
+          setCategories(response.data.data);
+        } else {
+          setCategories([]);
+        }
+      } catch (err) {
+        console.error("Categories load error", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const loadProducts = async () => {
       try {
         setIsLoading(true);
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          api.get("/products"),
-          fetchCategories(),
-        ]);
+        setError(null);
 
-        setProducts(productsResponse.data);
-        // A API de categorias retorna um objeto com uma propriedade 'data'
-        setCategories(categoriesResponse.data.data);
+        const params = {
+          page,
+          limit,
+          category: selectedCategory,
+          sort: sortOrder,
+          search: searchTerm
+        };
+
+        const response = await api.get("/products", { params });
+
+        // Handle new response structure { products, total, page, totalPages }
+        if (response.data && Array.isArray(response.data.products)) {
+          setProducts(response.data.products);
+          setTotalPages(response.data.totalPages);
+          setTotalProducts(response.data.total);
+        } else if (Array.isArray(response.data)) {
+          // Fallback for old API if something goes wrong
+          setProducts(response.data);
+          setTotalPages(1);
+        }
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-        setError("Não foi possível carregar os dados. Tente novamente mais tarde.");
+        console.error("Products load error:", err);
+        setError(t("common.errorLoad"));
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadData();
-  }, []);
+    // Debounce search if needed, but for now direct call
+    const timer = setTimeout(() => {
+      loadProducts();
+    }, 300);
 
-  useEffect(() => {
-    let filtered = [...products];
-
-    if (selectedCategory) {
-      filtered = filtered.filter(
-        (product) => product.category?.name === selectedCategory
-      );
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        (product.description && product.description.toLowerCase().includes(term))
-      );
-    }
-
-    if (sortOrder === "price-asc") {
-      filtered.sort((a, b) => a.price - b.price);
-    } else if (sortOrder === "price-desc") {
-      filtered.sort((a, b) => b.price - a.price);
-    } else if (sortOrder === "newest") {
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
-
-    setFilteredProducts(filtered);
-    setPage(1);
-  }, [selectedCategory, searchTerm, sortOrder, products]);
-
-  const indexOfLastProduct = page * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+    return () => clearTimeout(timer);
+  }, [page, selectedCategory, sortOrder, searchTerm]);
 
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
+    updateParams({
+      category: category === selectedCategory ? "" : category,
+      page: 1, // Reset to page 1 on filter change
+    });
   };
 
   const handleSortChange = (value) => {
-    setSortOrder(value);
+    updateParams({ sort: value, page: 1 });
   };
 
   const handleClearFilters = () => {
-    setSelectedCategory(null);
-    setSortOrder(null);
+    updateParams({ category: "", sort: "", page: 1 });
   };
 
-  const hasFilters = selectedCategory || sortOrder;
+  const handlePageChange = (newPage) => {
+    updateParams({ page: newPage });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const hasFilters = selectedCategory || sortOrder || searchTerm;
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 pt-20">
-      <main className="container mx-auto flex-grow px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col bg-background pt-20 animate-in fade-in duration-500">
+      <main className="container mx-auto flex-grow px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Sidebar */}
           <aside className="md:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <div className="rounded-xl border bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <FiFilter />
-                    Filtros
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="h-5 w-5" />
+                    {t("common.filters")}
                   </h3>
                   {hasFilters && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleClearFilters}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-primary hover:text-primary/80 h-8 px-2"
                     >
-                      Limpar
+                      {t("common.clear")}
                     </Button>
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <h4 className="font-medium">Categorias</h4>
-                  <ul className="space-y-1">
-                    {categories && categories.map((category) => (
-                      <li key={category.id}>
-                        <Button
-                          variant={selectedCategory === category.name ? "secondary" : "ghost"}
-                          className="w-full justify-start"
-                          onClick={() => handleCategorySelect(category.name)}
-                        >
-                          {category.name}
-                        </Button>
-                      </li>
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider text-muted-foreground">{t("home.categories")}</h4>
+                  <div className="flex flex-col gap-1">
+                    {categories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.name)}
+                        className={`text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${selectedCategory === category.name
+                          ? "bg-primary text-primary-foreground font-medium shadow-md"
+                          : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        {category.name}
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-xl border bg-white p-4 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4">Ordenar por</h3>
+              <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-4 text-foreground">{t("common.sortBy")}</h3>
                 <Select value={sortOrder || ""} onValueChange={handleSortChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Padrão" />
+                  <SelectTrigger className="w-full h-11 rounded-xl">
+                    <SelectValue placeholder={t("common.selectOption")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="newest">Mais Recentes</SelectItem>
-                    <SelectItem value="price-asc">Preço: Crescente</SelectItem>
-                    <SelectItem value="price-desc">Preço: Decrescente</SelectItem>
+                    <SelectItem value="newest">{t("home.newest")}</SelectItem>
+                    <SelectItem value="price_asc">{t("home.priceAsc")}</SelectItem>
+                    <SelectItem value="price_desc">{t("home.priceDesc")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </aside>
 
+          {/* Products grid */}
           <div className="md:col-span-3">
             {error ? (
-              <div className="py-12 text-center">
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
-                  <FiX size={24} />
+              <div className="py-24 text-center rounded-3xl border border-border/50 bg-card/30">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                  <X size={32} />
                 </div>
-                <p className="mb-4 text-xl text-gray-800">{error}</p>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="primary"
-                >
-                  Tentar novamente
+                <h3 className="mb-2 text-xl font-bold text-foreground">{t("common.errorLoad")}</h3>
+                <p className="mb-6 text-muted-foreground max-w-md mx-auto">{error}</p>
+                <Button onClick={() => window.location.reload()} variant="default" size="lg" className="rounded-xl">
+                  {t("common.retry")}
                 </Button>
               </div>
             ) : isLoading ? (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="rounded-lg bg-white p-4 shadow-sm">
-                    <Skeleton className="mb-4 aspect-square rounded-lg" />
-                    <Skeleton className="mb-2 h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                  <div key={i} className="flex flex-col space-y-4 rounded-2xl border border-border p-4">
+                    <Skeleton className="aspect-square rounded-xl" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-3/4 rounded-lg" />
+                      <Skeleton className="h-4 w-1/2 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-10 w-full rounded-xl mt-auto" />
                   </div>
                 ))}
               </div>
-            ) : currentProducts.length > 0 ? (
+            ) : products.length > 0 ? (
               <>
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {selectedCategory ? `Produtos em ${selectedCategory}` : searchTerm ? `Resultados para "${searchTerm}"` : 'Todos os Produtos'}
-                  </h2>
-                  <p className="text-gray-600">
-                    {filteredProducts.length} produto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
-                  </p>
+                <div className="mb-8 flex items-baseline justify-between border-b border-border/40 pb-4">
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground mb-1">
+                      {selectedCategory || (searchTerm ? `"${searchTerm}"` : t("home.allProducts"))}
+                    </h2>
+                    <p className="text-muted-foreground">
+                      {t("home.productCount", { count: totalProducts })}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 pb-8 sm:grid-cols-2 lg:grid-cols-3">
-                  {currentProducts.map((product) => (
+                <div className="grid grid-cols-1 gap-8 pb-12 sm:grid-cols-2 lg:grid-cols-3">
+                  {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="mb-8 flex justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      disabled={page === 1}
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      className="h-12 px-4 md:h-9 md:px-3"
-                    >
-                      Anterior
-                    </Button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (page <= 3) {
-                        pageNum = i + 1;
-                      } else if (page >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = page - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={page === pageNum ? "primary" : "outline"}
-                          size="lg"
-                          onClick={() => setPage(pageNum)}
-                          className="h-12 w-12 md:h-9 md:w-auto"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      disabled={page === totalPages}
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      className="h-12 px-4 md:h-9 md:px-3"
-                    >
-                      Próximo
-                    </Button>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               </>
             ) : (
-              <div className="py-16 text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600 animate-pulse">
-                  <FiSearch size={32} />
+              <div className="py-24 text-center rounded-3xl border border-dashed border-border/60 bg-muted/5">
+                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted text-muted-foreground/50">
+                  <Search size={40} />
                 </div>
-                <h3 className="mb-2 text-2xl font-semibold text-gray-800">Nenhum produto encontrado</h3>
-                <p className="mb-6 text-gray-600 max-w-md mx-auto">
-                  Tente ajustar seus filtros, alterar os termos de busca ou explorar outras categorias
+                <h3 className="mb-2 text-2xl font-bold text-foreground">{t("home.noProducts")}</h3>
+                <p className="mb-8 text-muted-foreground max-w-md mx-auto text-lg">
+                  {t("home.noProductsDesc")}
                 </p>
                 {hasFilters && (
                   <Button
                     onClick={handleClearFilters}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                    size="lg"
+                    className="rounded-xl"
                   >
-                    Limpar filtros
+                    {t("home.clearFilters")}
                   </Button>
                 )}
               </div>

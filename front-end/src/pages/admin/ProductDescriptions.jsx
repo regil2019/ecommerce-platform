@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import api from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -6,9 +6,11 @@ import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { toast } from 'react-toastify';
-import { FiRefreshCw, FiCheck, FiX, FiSparkles } from 'react-icons/fi';
+import { RefreshCw, Check, X, Sparkles } from 'lucide-react';
+import { useI18n } from '@/i18n';
 
 export default function ProductDescriptions() {
+  const { t } = useI18n();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(null);
@@ -26,7 +28,7 @@ export default function ProductDescriptions() {
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast.error('Erro ao carregar produtos');
+      toast.error(t('common.errorLoad'));
     } finally {
       setLoading(false);
     }
@@ -42,11 +44,11 @@ export default function ProductDescriptions() {
 
       if (response.data.success) {
         setGeneratedDescription(response.data.data.description);
-        toast.success('Descrição gerada com sucesso!');
+        toast.success(t('admin.descriptionGenerated'));
       }
     } catch (error) {
       console.error('Error generating description:', error);
-      toast.error('Erro ao gerar descrição');
+      toast.error(t('common.error'));
     } finally {
       setGenerating(null);
     }
@@ -58,7 +60,6 @@ export default function ProductDescriptions() {
         description: newDescription
       });
 
-      // Update local state
       setProducts(products.map(product =>
         product.id === productId
           ? { ...product, description: newDescription }
@@ -67,17 +68,17 @@ export default function ProductDescriptions() {
 
       setSelectedProduct(null);
       setGeneratedDescription('');
-      toast.success('Descrição atualizada com sucesso!');
+      toast.success(t('admin.descriptionUpdated'));
     } catch (error) {
       console.error('Error updating product:', error);
-      toast.error('Erro ao atualizar produto');
+      toast.error(t('common.error'));
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Gerar Descrições com IA</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('admin.aiDescriptions')}</h2>
         <div className="grid gap-4">
           {Array.from({ length: 6 }, (_, i) => (
             <Card key={i}>
@@ -96,17 +97,17 @@ export default function ProductDescriptions() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <FiSparkles className="text-purple-600" size={24} />
-        <h2 className="text-2xl font-bold">Gerar Descrições com IA</h2>
+        <Sparkles className="text-purple-600" size={24} />
+        <h2 className="text-2xl font-bold text-foreground">{t('admin.aiDescriptions')}</h2>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">Sobre esta funcionalidade:</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Usa IA (DeepSeek) para gerar descrições otimizadas para SEO</li>
-          <li>• Analisa preço, categoria e características do produto</li>
-          <li>• Cria descrições persuasivas que aumentam conversões</li>
-          <li>• Somente administradores podem gerar e atualizar descrições</li>
+      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">{t('admin.aboutFeature')}</h3>
+        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+          <li>• {t('admin.aiFeature1')}</li>
+          <li>• {t('admin.aiFeature2')}</li>
+          <li>• {t('admin.aiFeature3')}</li>
+          <li>• {t('admin.aiFeature4')}</li>
         </ul>
       </div>
 
@@ -117,12 +118,12 @@ export default function ProductDescriptions() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg mb-2">{product.name}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="font-semibold text-green-600">
                       $ {product.price?.toFixed(2)}
                     </span>
                     <Badge variant="outline">{product.category?.name}</Badge>
-                    <span>Estoque: {product.stock}</span>
+                    <span>{t('admin.stock')}: {product.stock}</span>
                   </div>
                 </div>
                 <Button
@@ -132,11 +133,11 @@ export default function ProductDescriptions() {
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {generating === product.id ? (
-                    <FiRefreshCw className="animate-spin" size={16} />
+                    <RefreshCw className="animate-spin mr-1" size={16} />
                   ) : (
-                    <FiSparkles size={16} />
+                    <Sparkles className="mr-1" size={16} />
                   )}
-                  {generating === product.id ? 'Gerando...' : 'Gerar IA'}
+                  {generating === product.id ? t('admin.generating') : t('admin.generateAI')}
                 </Button>
               </div>
             </CardHeader>
@@ -144,25 +145,25 @@ export default function ProductDescriptions() {
             <CardContent>
               {product.description && (
                 <div className="mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Descrição Atual:</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">
+                  <h4 className="font-medium text-foreground mb-2">{t('admin.currentDescription')}</h4>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded border border-border">
                     {product.description}
                   </p>
                 </div>
               )}
 
               {selectedProduct === product.id && generatedDescription && (
-                <div className="border-t pt-4">
-                  <h4 className="font-medium text-purple-900 mb-2 flex items-center gap-2">
-                    <FiSparkles className="text-purple-600" size={16} />
-                    Descrição Gerada por IA:
+                <div className="border-t border-border pt-4">
+                  <h4 className="font-medium text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+                    <Sparkles className="text-purple-600" size={16} />
+                    {t('admin.aiGenerated')}
                   </h4>
 
                   <Textarea
                     value={generatedDescription}
                     onChange={(e) => setGeneratedDescription(e.target.value)}
                     className="min-h-[100px] mb-3 border-purple-200 focus:border-purple-400"
-                    placeholder="Edite a descrição gerada se necessário..."
+                    placeholder={t('admin.editDescription')}
                   />
 
                   <div className="flex gap-2">
@@ -171,8 +172,8 @@ export default function ProductDescriptions() {
                       size="sm"
                       className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <FiCheck size={16} />
-                      Salvar Descrição
+                      <Check className="mr-1" size={16} />
+                      {t('admin.saveDescription')}
                     </Button>
                     <Button
                       onClick={() => {
@@ -182,8 +183,8 @@ export default function ProductDescriptions() {
                       variant="outline"
                       size="sm"
                     >
-                      <FiX size={16} />
-                      Cancelar
+                      <X className="mr-1" size={16} />
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
@@ -195,9 +196,9 @@ export default function ProductDescriptions() {
 
       {products.length === 0 && (
         <div className="text-center py-12">
-          <FiSparkles className="mx-auto text-gray-400 mb-4" size={48} />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
-          <p className="text-gray-600">Adicione produtos primeiro para gerar descrições com IA.</p>
+          <Sparkles className="mx-auto text-muted-foreground mb-4" size={48} />
+          <h3 className="text-lg font-medium text-foreground mb-2">{t('admin.noProductsFound')}</h3>
+          <p className="text-muted-foreground">{t('admin.addProductsFirst')}</p>
         </div>
       )}
     </div>

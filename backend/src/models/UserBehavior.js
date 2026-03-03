@@ -40,6 +40,7 @@ const UserBehavior = db.define('UserBehavior', {
     allowNull: true // Store additional data like time spent, source page, etc.
   }
 }, {
+  underscored: true,
   indexes: [
     {
       fields: ['user_id', 'action', 'timestamp']

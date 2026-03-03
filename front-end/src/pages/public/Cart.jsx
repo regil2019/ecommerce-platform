@@ -1,127 +1,88 @@
-import useCart from '../../hooks/useCart';
-import { Link } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
-import api from '../../services/api';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, CreditCard, Truck, Shield, Trash2, Minus, Plus } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { FiShoppingCart, FiCreditCard, FiTruck, FiShield, FiTrash2, FiMinus, FiPlus } from 'react-icons/fi';
-import { formatCurrency } from '../../lib/utils';
+import useCart from '../../hooks/useCart';
+import { useAuth } from '../../hooks/useAuth';
+import { useI18n } from '../../i18n';
+import { formatCurrency, getImageUrl } from '../../lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../../components/ui/carousel';
 import { Button } from '../../components/ui/Button';
-import { useAuth } from '../../hooks/useAuth';
 import ProductSuggestions from '../../components/ProductSuggestions';
-import { useState } from 'react';
 
-// Note: Stripe.js will show a warning about HTTP vs HTTPS during development.
-// This is expected behavior and the warning will disappear in production when using HTTPS.
-// See: https://stripe.com/docs/security#tls
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function Cart() {
   const { cartItems, removeFromCart, clearCart, updateQuantity } = useCart();
   const { user } = useAuth();
+  const { t } = useI18n();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = subtotal > 100 ? 0 : subtotal > 50 ? 9.99 : 15.99; // Progressive shipping
-  const tax = subtotal * 0.08; // 8% tax
+  const shipping = subtotal > 100 ? 0 : subtotal > 50 ? 9.99 : 15.99;
+  const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
-
-  const handleCheckout = async () => {
-    if (!user) {
-      toast.error('Faça login para continuar com a compra');
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      toast.error('Seu carrinho está vazio');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const stripe = await stripePromise;
-      const response = await api.post('/payment/create-checkout-session', { cartItems });
-      window.location.href = response.data.url;
-    } catch (error) {
-      console.error('Payment error:', error);
-      const errorMessage = error.response?.data?.error || error.response?.data?.errors?.join(', ') || 'Erro ao iniciar pagamento';
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleQuantityChange = async (itemId, newQuantity) => {
     if (newQuantity < 1) return;
     try {
       await updateQuantity(itemId, newQuantity);
-    } catch (error) {
-      toast.error('Erro ao atualizar quantidade');
+    } catch {
+      toast.error(t('common.error'));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Carrinho de Compras</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('cart.title')}</h1>
           {cartItems.length > 0 && (
-            <span className="text-sm text-gray-600">
-              {cartItems.length} {cartItems.length === 1 ? 'item' : 'itens'}
+            <span className="text-sm text-muted-foreground">
+              {t('cart.items', { count: String(cartItems.length) })}
             </span>
           )}
         </div>
 
         {cartItems.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-              <FiShoppingCart size={40} />
+          <div className="bg-card rounded-xl border border-border shadow-card p-12 text-center animate-fadeIn">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <ShoppingCart size={40} />
             </div>
-            <h2 className="mb-4 text-2xl font-bold text-gray-900">Seu carrinho está vazio</h2>
-            <p className="mb-8 text-gray-600 max-w-md mx-auto">
-              Parece que você ainda não adicionou nenhum produto ao carrinho.
-              Explore nossa loja e encontre produtos incríveis!
-            </p>
+            <h2 className="mb-4 text-2xl font-bold text-foreground">{t('cart.empty')}</h2>
+            <p className="mb-8 text-muted-foreground max-w-md mx-auto">{t('cart.emptyDesc')}</p>
             <Link
               to="/"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
             >
-              Explorar Produtos
+              {t('cart.explore')}
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              {cartItems.map((item, index) => (
-                <div key={`${item.id}-${index}`} className="border-b border-gray-200 p-6 last:border-b-0">
+              <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
+                {cartItems.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="border-b border-border p-6 last:border-b-0 transition-colors hover:bg-accent/30">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="flex-shrink-0">
-                        {(item.images?.length > 1) ? (
+                        {item.images?.length > 1 ? (
                           <Carousel className="w-24 h-24">
                             <CarouselContent>
-                              {(item.images || [item.image || '/images/placeholder-product.jpg']).map((img, idx) => (
+                              {(item.images || []).map((img, idx) => (
                                 <CarouselItem key={idx}>
-                                  <img
-                                    src={img}
-                                    alt={`${item.name} - Image ${idx + 1}`}
-                                    className="w-24 h-24 object-cover rounded-lg"
-                                  />
+                                  <img src={getImageUrl(img)} alt={`${item.name} ${idx + 1}`} className="w-24 h-24 object-cover rounded-lg" />
                                 </CarouselItem>
                               ))}
                             </CarouselContent>
-                            {item.images?.length > 1 && (
-                              <>
-                                <CarouselPrevious className="left-1 size-6" />
-                                <CarouselNext className="right-1 size-6" />
-                              </>
-                            )}
+                            <CarouselPrevious className="left-1 size-6" />
+                            <CarouselNext className="right-1 size-6" />
                           </Carousel>
                         ) : (
                           <img
-                            src={item.images?.[0] || item.image || '/images/placeholder-product.jpg'}
+                            src={getImageUrl(item.images?.[0] || item.image)}
                             alt={item.name}
                             className="w-24 h-24 object-cover rounded-lg"
                           />
@@ -129,40 +90,36 @@ export default function Cart() {
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-900 mb-1">{item.name}</h3>
-                        <p className="text-gray-600 text-sm mb-2">{item.description}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="text-blue-600 font-semibold">{formatCurrency(item.price)} each</span>
-                        </div>
+                        <h3 className="font-semibold text-lg text-foreground mb-1">{item.name}</h3>
+                        <p className="text-muted-foreground text-sm mb-2 line-clamp-1">{item.description}</p>
+                        <span className="text-primary font-semibold text-sm">
+                          {formatCurrency(item.price)} {t('product.each')}
+                        </span>
                       </div>
 
-                      <div className="flex flex-col items-end gap-4">
+                      <div className="flex flex-col items-end gap-3">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                            className="w-8 h-8 rounded-full bg-muted hover:bg-accent flex items-center justify-center transition-colors"
                           >
-                            <FiMinus size={14} />
+                            <Minus size={14} />
                           </button>
-                          <span className="w-12 text-center font-medium">{item.quantity}</span>
+                          <span className="w-12 text-center font-medium text-foreground">{item.quantity}</span>
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                            className="w-8 h-8 rounded-full bg-muted hover:bg-accent flex items-center justify-center transition-colors"
                           >
-                            <FiPlus size={14} />
+                            <Plus size={14} />
                           </button>
                         </div>
-
-                        <p className="text-lg font-bold text-gray-900">
-                          {formatCurrency(item.price * item.quantity)}
-                        </p>
-
+                        <p className="text-lg font-bold text-foreground">{formatCurrency(item.price * item.quantity)}</p>
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                          title="Remover item"
+                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 p-2 rounded-lg transition-colors"
+                          title={t('cart.remove')}
                         >
-                          <FiTrash2 size={18} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </div>
@@ -170,148 +127,128 @@ export default function Cart() {
                 ))}
               </div>
 
-              {/* Product Suggestions */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <ProductSuggestions title="Você pode gostar também" limit={3} />
+              <div className="bg-card rounded-xl border border-border shadow-card p-6">
+                <ProductSuggestions title={t('cart.youMayAlsoLike')} limit={3} />
               </div>
             </div>
 
             {/* Order Summary */}
             <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold mb-6">Resumo do Pedido</h2>
+              <div className="bg-card rounded-xl border border-border shadow-card p-6 sticky top-24">
+                <h2 className="text-xl font-bold mb-6 text-foreground">{t('cart.orderSummary')}</h2>
 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-3 mb-6 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal ({cartItems.length} itens)</span>
-                    <span className="font-medium">{formatCurrency(subtotal)}</span>
+                    <span className="text-muted-foreground">{t('cart.subtotal', { count: String(cartItems.length) })}</span>
+                    <span className="font-medium text-foreground">{formatCurrency(subtotal)}</span>
                   </div>
-
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Frete</span>
-                    <span className={`font-medium ${shipping === 0 ? 'text-green-600' : ''}`}>
-                      {shipping === 0 ? 'Grátis' : formatCurrency(shipping)}
+                    <span className="text-muted-foreground">{t('cart.shipping')}</span>
+                    <span className={`font-medium ${shipping === 0 ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
+                      {shipping === 0 ? t('cart.freeShipping') : formatCurrency(shipping)}
                     </span>
                   </div>
-
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Impostos</span>
-                    <span className="font-medium">{formatCurrency(tax)}</span>
+                    <span className="text-muted-foreground">{t('cart.taxes')}</span>
+                    <span className="font-medium text-foreground">{formatCurrency(tax)}</span>
                   </div>
-
                   {subtotal < 100 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs text-blue-800">
-                        Add {formatCurrency(25 - subtotal)} more for free shipping!
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 dark:bg-primary/10">
+                      <p className="text-xs text-primary">
+                        {t('cart.freeShippingThreshold', { amount: formatCurrency(100 - subtotal) })}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t pt-4 mb-6">
+                <div className="border-t border-border pt-4 mb-6">
                   <div className="flex justify-between text-xl font-bold">
-                    <span>Total</span>
-                    <span className="text-blue-600">{formatCurrency(total)}</span>
+                    <span className="text-foreground">{t('cart.total')}</span>
+                    <span className="text-primary">{formatCurrency(total)}</span>
                   </div>
                 </div>
 
                 {user ? (
                   <Button
-                    onClick={handleCheckout}
-                    disabled={loading}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-medium"
+                    onClick={() => navigate('/checkout')}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-lg font-medium"
                   >
-                    {loading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Processando...
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center">
-                        <FiCreditCard className="mr-2" size={20} />
-                        Finalizar Compra
-                      </div>
-                    )}
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    {t('cart.continueCheckout')}
                   </Button>
                 ) : (
                   <div className="space-y-3">
                     <Link
                       to="/login"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium text-center block"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-lg font-medium text-center block transition-colors"
                     >
-                      Fazer Login para Comprar
+                      {t('cart.loginToCheckout')}
                     </Link>
-                    <p className="text-xs text-gray-600 text-center">
-                      Ou <Link to="/register" className="text-blue-600 hover:underline">criar conta</Link>
+                    <p className="text-xs text-muted-foreground text-center">
+                      {t('cart.or')}{' '}
+                      <Link to="/register" className="text-primary hover:underline">{t('cart.createAccount')}</Link>
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Security & Shipping Info */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              {/* Trust badges */}
+              <div className="bg-card rounded-xl border border-border shadow-card p-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <FiShield className="text-green-600" size={20} />
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <Shield className="text-green-600 dark:text-green-400" size={20} />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">Pagamento Seguro</h3>
-                      <p className="text-sm text-gray-600">Seus dados estão protegidos</p>
+                      <h3 className="font-medium text-foreground">{t('cart.securePayment')}</h3>
+                      <p className="text-sm text-muted-foreground">{t('cart.securePaymentDesc')}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FiTruck className="text-blue-600" size={20} />
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                      <Truck className="text-blue-600 dark:text-blue-400" size={20} />
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">Express Delivery</h3>
-                      <p className="text-sm text-gray-600">Free shipping over $25</p>
+                      <h3 className="font-medium text-foreground">{t('cart.expressDelivery')}</h3>
+                      <p className="text-sm text-muted-foreground">{t('cart.expressDeliveryDesc')}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Clear Cart */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-card rounded-xl border border-border shadow-card p-4">
                 <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 py-2 px-4 rounded-lg transition-colors font-medium"
+                  className="w-full text-destructive hover:bg-destructive/10 py-2 px-4 rounded-lg transition-colors font-medium text-sm"
                 >
-                  <FiTrash2 className="inline mr-2" size={16} />
-                  Limpar Carrinho
+                  <Trash2 className="inline mr-2" size={16} />
+                  {t('cart.clearCart')}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Clear Cart Confirmation Modal */}
+        {/* Clear Cart Confirmation */}
         {showClearConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold mb-4">Limpar Carrinho?</h3>
-              <p className="text-gray-600 mb-6">
-                Esta ação irá remover todos os itens do seu carrinho. Esta ação não pode ser desfeita.
-              </p>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="bg-card rounded-xl border border-border p-6 max-w-md w-full shadow-xl animate-slideUp">
+              <h3 className="text-lg font-bold mb-4 text-foreground">{t('cart.clearCartConfirm')}</h3>
+              <p className="text-muted-foreground mb-6">{t('cart.clearCartDesc')}</p>
               <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowClearConfirm(false)}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Cancelar
+                <Button onClick={() => setShowClearConfirm(false)} variant="outline" className="flex-1">
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   onClick={() => {
                     clearCart();
                     setShowClearConfirm(false);
-                    toast.success('Carrinho limpo com sucesso');
+                    toast.success(t('cart.clearCartSuccess'));
                   }}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
-                  Limpar
+                  {t('common.confirm')}
                 </Button>
               </div>
             </div>

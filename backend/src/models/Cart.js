@@ -1,8 +1,8 @@
 // src/models/Cart.js
 import { DataTypes } from 'sequelize'
 import db from '../config/database.js'
-import Product from './Product.js' //
-import User from './User.js' // Importar o modelo User (opcional, se quiser associar ao User)
+import Product from './Product.js'
+import User from './User.js'
 
 const Cart = db.define('Cart', {
   id: {
@@ -14,7 +14,7 @@ const Cart = db.define('Cart', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: User, // Referência à tabela users (opcional, mas recomendado)
+      model: User,
       key: 'id'
     }
   },
@@ -22,7 +22,7 @@ const Cart = db.define('Cart', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: Product, // Referência à tabela products
+      model: Product,
       key: 'id'
     }
   },
@@ -30,20 +30,15 @@ const Cart = db.define('Cart', {
     type: DataTypes.INTEGER,
     defaultValue: 1,
     validate: {
-      min: 1 // Quantidade mínima de 1
+      min: 1
     }
   }
 }, {
-  tableName: 'cart', // Nome da tabela no MySQL
-  timestamps: true // Adiciona createdAt e updatedAt
+  tableName: 'cart',
+  timestamps: true,
+  underscored: true
 })
 
-// Associações (IMPORTANTE!)
-Product.hasMany(Cart, { foreignKey: 'productId' })
-Cart.belongsTo(Product, { foreignKey: 'productId' })
-
-// Associação com User (opcional, se quiser)
-User.hasMany(Cart, { foreignKey: 'userId' })
-Cart.belongsTo(User, { foreignKey: 'userId' })
+// Associations defined in models/index.js with proper aliases
 
 export default Cart

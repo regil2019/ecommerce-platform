@@ -3,7 +3,14 @@ import express from 'express'
 // import osu from 'node-os-utils';
 // import monitoringService from '../services/monitoringService.js';
 
+import { authenticate } from '../middleware/authMiddleware.js'
+
 const router = express.Router()
+
+// Endpoint to trigger user sync/promotion
+router.get('/sync', authenticate, (req, res) => {
+  res.json({ success: true, user: req.user })
+})
 
 // Simple health check for load balancers (Koyeb, etc.)
 // Returns 200 quickly without expensive operations

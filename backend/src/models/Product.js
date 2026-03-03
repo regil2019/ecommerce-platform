@@ -26,9 +26,19 @@ const Product = db.define('Product', {
     type: DataTypes.JSON, // array de URLs
     defaultValue: [],
     allowNull: false,
-    get () {
+    get() {
       const raw = this.getDataValue('images')
-      return Array.isArray(raw) ? raw : []
+      let parsed = [];
+      if (Array.isArray(raw)) parsed = raw;
+      else if (typeof raw === 'string' && raw) {
+        try { parsed = JSON.parse(raw); } catch (e) { parsed = []; }
+      }
+      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+      return parsed.map(img => {
+        if (!img) return img;
+        if (img.startsWith('http')) return img;
+        return `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`;
+      })
     }
   },
   stock: {
@@ -53,10 +63,82 @@ const Product = db.define('Product', {
     validate: {
       min: 0.01
     }
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
+  slug: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  short_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  original_price: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  discount_percentage: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  main_image: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    get() {
+      const rawValue = this.getDataValue('main_image');
+      if (!rawValue) return rawValue;
+      if (rawValue.startsWith('http')) return rawValue;
+      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
+      return `${baseUrl}${rawValue.startsWith('/') ? '' : '/'}${rawValue}`;
+    }
+  },
+  sku: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  is_featured: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  dimensions: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  tags: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('tags');
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && raw) {
+        try { return JSON.parse(raw); } catch (e) { return []; }
+      }
+      return [];
+    }
   }
 }, {
   tableName: 'products',
-  timestamps: true
+  timestamps: true,
+  underscored: true,
+  indexes: [
+    {
+      fields: ['category_id']
+    },
+    {
+      fields: ['price']
+    },
+    {
+      fields: ['is_active']
+    },
+    {
+      fields: ['slug']
+    }
+  ]
 })
 
 export default Product

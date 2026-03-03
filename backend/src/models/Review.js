@@ -37,7 +37,8 @@ const Review = db.define('Review', {
   }
 }, {
   tableName: 'reviews',
-  timestamps: true
+  timestamps: true,
+  underscored: true
 })
 
 export default Review

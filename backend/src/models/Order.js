@@ -19,10 +19,9 @@ const Order = db.define('Order', {
   total: {
     type: DataTypes.FLOAT
   },
-  PaymentStatus: {
+  paymentStatus: {
     type: DataTypes.ENUM('pending', 'paid', 'refunded'),
     defaultValue: 'pending'
-
   },
   shippingCost: {
     type: DataTypes.FLOAT,
@@ -32,7 +31,20 @@ const Order = db.define('Order', {
   shippingMethod: {
     type: DataTypes.ENUM('standard', 'express'),
     allowNull: true
+  },
+  promoCode: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  discountAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
   }
+}, {
+  underscored: true
 })
-Order.hasMany(OrderItem, { foreignKey: 'orderId' })
+
+
+// Association defined in models/index.js with alias 'orderItems'
+
 export default Order

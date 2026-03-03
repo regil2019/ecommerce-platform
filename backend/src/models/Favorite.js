@@ -31,10 +31,11 @@ const Favorite = db.define(
   {
     tableName: 'favorites',
     timestamps: true,
+    underscored: true,
     indexes: [
       {
         unique: true,
-        fields: ['userId', 'productId']
+        fields: ['user_id', 'product_id']
       }
     ]
   }

@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { useAuth } from '../hooks/useAuth';
-import { addToFavorites, removeFromFavorites, checkFavoriteStatus } from '../services/favoriteApi';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { Heart } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { addToFavorites, removeFromFavorites, checkFavoriteStatus } from "../services/favoriteApi";
+import { toast } from "react-toastify";
+import { useI18n } from "../i18n";
 
-const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
+const FavoriteButton = ({ productId, size = "w-6 h-6", className = "" }) => {
+  const { t } = useI18n();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Check if user is logged in (either from hook or localStorage)
-  const isLoggedIn = user || localStorage.getItem('token');
-
-
+  const isLoggedIn = user || localStorage.getItem("token");
 
   useEffect(() => {
     let isMounted = true;
@@ -25,7 +24,7 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
             setIsFavorite(response.isFavorite);
           }
         } catch (error) {
-          console.error('Erro ao verificar status do favorito:', error);
+          console.error("Favorite status error:", error);
           if (isMounted) {
             setIsFavorite(false);
           }
@@ -38,20 +37,15 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
     };
 
     loadFavoriteStatus();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [user, productId]);
-
-
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      toast.error('Você precisa estar logado para favoritar produtos');
+      toast.error(t("auth.fillAllFields"));
       return;
     }
 
@@ -60,38 +54,39 @@ const FavoriteButton = ({ productId, size = 'w-6 h-6', className = '' }) => {
       if (isFavorite) {
         await removeFromFavorites(productId);
         setIsFavorite(false);
-        toast.success('Produto removido dos favoritos');
+        toast.success(t("product.removeFromFavorites"));
       } else {
         await addToFavorites(productId);
         setIsFavorite(true);
-        toast.success('Produto adicionado aos favoritos');
+        toast.success(t("product.addToFavorites"));
       }
     } catch (error) {
-      console.error('Erro ao alterar favorito:', error);
-      toast.error('Erro ao alterar favorito');
+      console.error("Favorite toggle error:", error);
+      toast.error(t("common.error"));
     } finally {
       setLoading(false);
     }
   };
 
   if (!isLoggedIn) {
-    return null; // Não mostrar botão se usuário não estiver logado
+    return null;
   }
 
   return (
     <button
       onClick={handleToggleFavorite}
       disabled={loading}
-      className={`absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 hover:bg-white transition-colors duration-200 ${loading ? 'opacity-50' : ''} ${className}`}
-      aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-      title={loading ? 'Carregando...' : (isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos')}
+      className={`absolute right-2 top-2 z-10 rounded-full bg-card/80 p-2 transition-colors duration-200 hover:bg-card ${loading ? "opacity-50" : ""} ${className}`}
+      aria-label={isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
+      title={loading ? t("common.loading") : isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
     >
       {loading ? (
-        <div className={`${size} border-2 border-gray-300 border-t-red-500 rounded-full animate-spin`} />
-      ) : isFavorite ? (
-        <FaHeart className={`${size} text-red-500`} />
+        <div className={`${size} animate-spin rounded-full border-2 border-muted-foreground/30 border-t-destructive`} />
       ) : (
-        <FaRegHeart className={`${size} text-gray-600 hover:text-red-500`} />
+        <Heart
+          className={`${size} transition-colors ${isFavorite ? "fill-current text-destructive" : "text-muted-foreground hover:text-destructive"
+            }`}
+        />
       )}
     </button>
   );

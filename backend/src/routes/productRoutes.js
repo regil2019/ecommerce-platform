@@ -93,14 +93,13 @@ router.post(
   isAdmin,
   productValidators,
   convertCategoryId,
-  async (req, res) => {
+  async (req, res, next) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() })
     }
 
     try {
-      console.log('Received payload:', req.body)
       const { categoryId, ...productData } = req.body
 
       // Verifica se a categoria existe (quando enviada)
@@ -113,25 +112,25 @@ router.post(
 
       // Garante que images é array
       const images = Array.isArray(productData.images) ? productData.images : []
-      console.log('Creating product with data:', { ...productData, images, categoryId })
 
-      const product = await Product.create({ ...productData, images, categoryId })
+      // Define main_image como a primeira imagem se houver imagens
+      const main_image = images.length > 0 ? images[0] : null
+
+      const product = await Product.create({ ...productData, images, main_image, categoryId })
       res.status(201).json(product)
     } catch (error) {
-      console.error('Erro ao criar produto:', error)
-
-      // Erros de validação do Sequelize devem retornar 400
       if (error instanceof ValidationError) {
         return res.status(400).json({
-          error: 'Erro de validação ao criar produto',
+          success: false,
+          message: 'Validation Error',
+          errorCode: 'VALIDATION_ERROR',
           details: error.errors?.map((e) => ({
             field: e.path,
             message: e.message
           }))
         })
       }
-
-      res.status(500).json({ error: 'Erro ao criar produto' })
+      next(error)
     }
   }
 )
@@ -205,7 +204,7 @@ router.put(
   isAdmin,
   productValidators,
   convertCategoryId,
-  async (req, res) => {
+  async (req, res, next) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() })
@@ -229,22 +228,25 @@ router.put(
 
       // Garante que images é array
       const images = Array.isArray(productData.images) ? productData.images : []
-      await product.update({ ...productData, images, categoryId })
+
+      // Define main_image como a primeira imagem se houver imagens
+      const main_image = images.length > 0 ? images[0] : product.main_image
+
+      await product.update({ ...productData, images, main_image, categoryId })
       res.json(product)
     } catch (error) {
-      console.error('Erro ao atualizar produto:', error)
-
       if (error instanceof ValidationError) {
         return res.status(400).json({
-          error: 'Erro de validação ao atualizar produto',
+          success: false,
+          message: 'Validation Error',
+          errorCode: 'VALIDATION_ERROR',
           details: error.errors?.map((e) => ({
             field: e.path,
             message: e.message
           }))
         })
       }
-
-      res.status(500).json({ error: 'Erro ao atualizar produto' })
+      next(error)
     }
   }
 )
@@ -276,7 +278,7 @@ router.put(
  *       500:
  *         description: Internal server error
  */
-router.delete('/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/:id', authenticate, isAdmin, async (req, res, next) => {
   try {
     const product = await Product.findByPk(req.params.id)
     if (!product) {
@@ -286,31 +288,32 @@ router.delete('/:id', authenticate, isAdmin, async (req, res) => {
     // Check for dependencies before deleting
     const { OrderItem, Favorite, Review } = await import('../models/index.js')
 
-    const orderItemsCount = await OrderItem.count({ where: { productId: req.params.id } })
-    const favoritesCount = await Favorite.count({ where: { productId: req.params.id } })
-    const reviewsCount = await Review.count({ where: { productId: req.params.id } })
+    const orderItemsCount = await OrderItem.count({ where: { product_id: req.params.id } })
+    const favoritesCount = await Favorite.count({ where: { product_id: req.params.id } })
+    const reviewsCount = await Review.count({ where: { product_id: req.params.id } })
 
     if (orderItemsCount > 0) {
       return res.status(400).json({
-        error: `Não é possível excluir o produto. Ele possui ${orderItemsCount} pedido(s) associado(s).`
+        success: false,
+        message: `Cannot delete this product. It has ${orderItemsCount} associated order(s). Consider setting stock to 0 instead.`,
+        errorCode: 'PRODUCT_HAS_ASSOCIATIONS'
       })
     }
 
     if (favoritesCount > 0 || reviewsCount > 0) {
       // Delete associated favorites and reviews first
       if (favoritesCount > 0) {
-        await Favorite.destroy({ where: { productId: req.params.id } })
+        await Favorite.destroy({ where: { product_id: req.params.id } })
       }
       if (reviewsCount > 0) {
-        await Review.destroy({ where: { productId: req.params.id } })
+        await Review.destroy({ where: { product_id: req.params.id } })
       }
     }
 
     await product.destroy()
     res.status(204).end()
   } catch (error) {
-    console.error('Erro ao deletar produto:', error)
-    res.status(500).json({ error: 'Erro ao deletar produto' })
+    next(error)
   }
 })
 
@@ -386,9 +389,14 @@ router.delete('/:id', authenticate, isAdmin, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get('/', productsLimiter, async (req, res) => {
+router.get('/', productsLimiter, async (req, res, next) => {
   try {
-    const { category, search, minPrice, maxPrice, sort } = req.query
+    const { category, search, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query
+
+    // Pagination calculations
+    const pageNum = parseInt(page, 10)
+    const limitNum = parseInt(limit, 10)
+    const offset = (pageNum - 1) * limitNum
 
     const where = { stock: { [Op.gt]: 0 } }
 
@@ -415,22 +423,35 @@ router.get('/', productsLimiter, async (req, res) => {
     if (sort === 'price_desc') order.push(['price', 'DESC'])
     if (sort === 'newest') order.push(['createdAt', 'DESC'])
 
-    const products = await Product.findAll({
-      attributes: ['id', 'name', 'price', 'images', 'stock', 'createdAt'],
+    // Default sort if none provided to ensure consistent pagination
+    if (order.length === 0) {
+      order.push(['id', 'DESC'])
+    }
+
+    const { count, rows } = await Product.findAndCountAll({
+      attributes: ['id', 'name', 'price', 'images', 'main_image', 'stock', 'createdAt'],
       where,
       order,
+      limit: limitNum,
+      offset: offset,
       include: [
         {
           model: Category,
           as: 'category',
           attributes: ['id', 'name']
         }
-      ]
+      ],
+      distinct: true // Important for correct count with includes
     })
-    res.json(products)
+
+    res.json({
+      products: rows,
+      total: count,
+      page: pageNum,
+      totalPages: Math.ceil(count / limitNum)
+    })
   } catch (error) {
-    console.error('Erro ao buscar produtos:', error)
-    res.status(500).json({ error: 'Erro ao buscar produtos' })
+    next(error)
   }
 })
 
@@ -488,10 +509,10 @@ router.get('/', productsLimiter, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const product = await Product.findByPk(req.params.id, {
-      attributes: ['id', 'name', 'price', 'images', 'stock', 'description', 'categoryId', 'createdAt'],
+      attributes: ['id', 'name', 'price', 'images', 'main_image', 'stock', 'description', 'categoryId', 'createdAt'],
       include: [
         {
           model: Category,
@@ -511,8 +532,7 @@ router.get('/:id', async (req, res) => {
 
     res.json(product)
   } catch (error) {
-    console.error('Erro ao buscar produto:', error)
-    res.status(500).json({ error: 'Erro ao buscar produto' })
+    next(error)
   }
 })
 

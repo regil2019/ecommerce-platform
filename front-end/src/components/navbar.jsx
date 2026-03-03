@@ -1,353 +1,285 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import {
-  Search,
-  ShoppingCart,
-  Menu,
-  User,
-  Heart,
-  Package,
-  LogOut,
-  LayoutDashboard,
-} from 'lucide-react';
-import PropTypes from 'prop-types';
-import { useAuth } from '../hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, Search, Sun, Moon, User, LogOut, Heart, LayoutDashboard, Package } from 'lucide-react';
 import useCart from '../hooks/useCart';
-import { Button } from './ui/Button';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  SheetClose,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from './ui/sheet';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../hooks/useAuth';
+import { useI18n } from '../i18n';
+import Login from '../pages/public/Login';
+import Register from '../pages/public/Register';
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 
-const navLinkClasses =
-  'text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors';
-const activeNavLinkClasses = 'text-gray-900 font-semibold';
-
-const NavBar = ({ searchTerm, setSearchTerm }) => {
-  const { user, logout } = useAuth();
-  const { cartItems } = useCart();
-  const [scrolled, setScrolled] = useState(false);
+export default function NavBar({ searchTerm, setSearchTerm }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { cartItems: cart } = useCart();
+  const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth(); // Keeps compatibility
   const navigate = useNavigate();
-
-  const cartCount = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
-  );
+  const { t, locale, setLocale, LOCALES } = useI18n();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const renderUserMenu = (isMobile = false) => {
-    const menuTrigger = (
-      <Button variant="ghost" size="icon" className="rounded-full">
-        <User className="h-5 w-5" />
-      </Button>
-    );
+  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-    const menuContent = (
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="font-semibold">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {user.role === 'admin' && (
-          <DropdownMenuItem asChild>
-            <Link to="/admin">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              <span>Dashboard</span>
-            </Link>
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem asChild>
-          <Link to="/profile">
-            <User className="mr-2 h-4 w-4" />
-            <span>Meu Perfil</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/orders">
-            <Package className="mr-2 h-4 w-4" />
-            <span>Meus Pedidos</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/favorites">
-            <Heart className="mr-2 h-4 w-4" />
-            <span>Favoritos</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    );
-
-    if (isMobile) {
-      // No modo mobile, os links são mostrados diretamente no Sheet
-      return (
-        <div className="space-y-2">
-          <p className="font-semibold px-2">{user.name}</p>
-
-          <SheetClose asChild>
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100"
-            >
-              <User className="h-5 w-5" /> Perfil
-            </Link>
-          </SheetClose>
-
-          <SheetClose asChild>
-            <Link
-              to="/orders"
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100"
-            >
-              <Package className="h-5 w-5" /> Pedidos
-            </Link>
-          </SheetClose>
-
-          <SheetClose asChild>
-            <Link
-              to="/favorites"
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100"
-            >
-              <Heart className="h-5 w-5" /> Favoritos
-            </Link>
-          </SheetClose>
-
-          {user.role === 'admin' && (
-            <SheetClose asChild>
-              <Link
-                to="/admin"
-                className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100"
-              >
-                <LayoutDashboard className="h-5 w-5" /> Dashboard
-              </Link>
-            </SheetClose>
-          )}
-
-          <Button
-            variant="ghost"
-            onClick={logout}
-            className="w-full justify-start gap-2 p-2"
-          >
-            <LogOut className="h-5 w-5" /> Sair
-          </Button>
-        </div>
-      );
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm)}`);
+      setIsMenuOpen(false);
     }
-
-    return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>{menuTrigger}</DropdownMenuTrigger>
-        {menuContent}
-      </DropdownMenu>
-    );
   };
 
   return (
-    <header
-      className={`fixed top-0 z-50 w-full border-b transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-sm shadow-sm' : 'bg-white'
-      }`}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-background/80 backdrop-blur-md shadow-md border-b border-border'
+        : 'bg-background/50 backdrop-blur-sm'
+        }`}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0">
-            <img
-              src="/images/lumo-logo.png"
-              alt="Lumo"
-              className="h-16 md:h-20 w-auto"
-            />
+          <Link to="/" className="flex-shrink-0 flex items-center gap-2 group">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl transform group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/25">
+              E
+            </div>
+            <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font-display">
+              Elevate
+            </span>
           </Link>
 
-          {/* Navegação Desktop */}
-          <nav className="hidden md:flex items-center gap-6">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive ? activeNavLinkClasses : navLinkClasses
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/products"
-              className={({ isActive }) =>
-                isActive ? activeNavLinkClasses : navLinkClasses
-              }
-            >
-              Produtos
-            </NavLink>
-            <NavLink
-              to="/about"
-              className={({ isActive }) =>
-                isActive ? activeNavLinkClasses : navLinkClasses
-              }
-            >
-              Sobre
-            </NavLink>
-          </nav>
+          {/* Desktop Search */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <form onSubmit={handleSearch} className="relative w-full group">
+              <input
+                type="text"
+                placeholder={t('common.search')}
+                className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-full pl-12 pr-4 py-2 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 group-hover:bg-secondary/80"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-hover:text-primary transition-colors duration-300" />
+            </form>
+          </div>
 
-          {/* Ações e Busca */}
-          <div className="flex flex-1 items-center justify-end gap-4">
-            {/* Barra de Busca Desktop */}
-            <div className="hidden sm:flex flex-1 max-w-xs">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Pesquisar..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-full border bg-gray-50 pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link to="/products" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
+              {t('nav.products')}
+            </Link>
+
+            <Link to="/about" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
+              {t('nav.about')}
+            </Link>
+
+            {/* Language Selector */}
+            <div className="relative group">
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-secondary transition-colors">
+                <span className="text-xl">{LOCALES[locale].flag}</span>
+                <span className="font-medium text-sm">{LOCALES[locale].name}</span>
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-40 bg-card rounded-xl shadow-lg border border-border overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+                {Object.entries(LOCALES).map(([key, { name, flag }]) => (
+                  <button
+                    key={key}
+                    onClick={() => setLocale(key)}
+                    className={`w-full text-left px-4 py-2 hover:bg-secondary transition-colors flex items-center gap-3 ${locale === key ? 'bg-primary/10 text-primary' : ''
+                      }`}
+                  >
+                    <span className="text-xl">{flag}</span>
+                    <span className="font-medium text-sm">{name}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Ações do Usuário */}
-            <div className="flex items-center gap-2">
-              {/* Carrinho: sem asChild, navegação via onClick */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => navigate('/cart')}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
-                    {cartCount}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:rotate-90"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            {/* Auth Actions */}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-primary/40 transform hover:-translate-y-0.5">
+                  {t('nav.login')}
+                </button>
+              </SignInButton>
+            </SignedOut>
+
+            <SignedIn>
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                  <LayoutDashboard size={20} />
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Dashboard
                   </span>
-                )}
-              </Button>
-
-              {/* Login / Menu do usuário */}
-              {user ? (
-                renderUserMenu()
-              ) : (
-                <Button onClick={() => navigate('/login')}>Login</Button>
+                </Link>
               )}
-            </div>
 
-            {/* Menu Mobile Trigger */}
-            <div className="md:hidden">
-              <Sheet>
-                {/* Trigger simples sem asChild */}
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
+              <Link to="/favorites" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                <Heart size={20} />
+                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  {t('nav.favorites')}
+                </span>
+              </Link>
 
-                <SheetContent side="left" className="w-72">
-                  <SheetHeader>
-                    <SheetTitle className="sr-only">
-                      Menu de Navegação
-                    </SheetTitle>
-                    <SheetDescription className="sr-only">
-                      Menu de navegação principal com links para diferentes seções do site
-                    </SheetDescription>
-                  </SheetHeader>
+              <Link to="/orders" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                <Package size={20} />
+                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  {t('nav.orders')}
+                </span>
+              </Link>
 
-                  <div className="p-4">
-                    <div className="mb-8">
-                      <img
-                        src="/images/lumo-logo.png"
-                        alt="Lumo"
-                        className="h-16 w-auto"
-                      />
-                    </div>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
 
-                    {/* Busca Mobile */}
-                    <div className="relative mb-6">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                      <input
-                        type="text"
-                        placeholder="Pesquisar..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-full border bg-gray-50 pl-10 pr-4 py-2 text-sm"
-                      />
-                    </div>
+            <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
+              <ShoppingCart size={24} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-lg border-2 border-background animate-in zoom-in">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+          </div>
 
-                    {/* Navegação Mobile */}
-                    <nav className="flex flex-col space-y-2 mb-6">
-                      <SheetClose asChild>
-                        <NavLink
-                          to="/"
-                          className="p-2 rounded-md hover:bg-gray-100"
-                        >
-                          Home
-                        </NavLink>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <NavLink
-                          to="/products"
-                          className="p-2 rounded-md hover:bg-gray-100"
-                        >
-                          Produtos
-                        </NavLink>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <NavLink
-                          to="/about"
-                          className="p-2 rounded-md hover:bg-gray-100"
-                        >
-                          Sobre
-                        </NavLink>
-                      </SheetClose>
-                    </nav>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center gap-4">
+            <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground transition-colors">
+              <ShoppingCart size={24} />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
 
-                    <div className="border-t pt-4">
-                      {user ? (
-                        renderUserMenu(true)
-                      ) : (
-                        // Login mobile: Link direto dentro do SheetClose
-                        <SheetClose asChild>
-                          <Link
-                            to="/login"
-                            className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50"
-                          >
-                            Login
-                          </Link>
-                        </SheetClose>
-                      )}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-lg hover:bg-secondary text-foreground transition-colors"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
       </div>
-    </header>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-xl animate-in slide-in-from-top-5">
+          <div className="px-4 py-6 space-y-4">
+            <form onSubmit={handleSearch} className="relative">
+              <input
+                type="text"
+                placeholder={t('search_placeholder')}
+                className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </form>
+
+            <div className="flex flex-col gap-2">
+              <Link
+                to="/products"
+                className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.products')}
+              </Link>
+
+              <Link
+                to="/about"
+                className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {t('nav.about')}
+              </Link>
+
+              <div className="h-px bg-border my-2" />
+
+              <SignedOut>
+                <Link
+                  to="/login"
+                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User size={20} />
+                  {t('nav.login')}
+                </Link>
+
+                <Link
+                  to="/register"
+                  className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-center shadow-lg shadow-primary/25 mt-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t('nav.register')}
+                </Link>
+              </SignedOut>
+
+              <SignedIn>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Box size={20} />
+                    Dashboard
+                  </Link>
+                )}
+
+                <Link
+                  to="/favorites"
+                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Heart size={20} />
+                  {t('nav.favorites')}
+                </Link>
+
+                <Link
+                  to="/orders"
+                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Package size={20} />
+                  {t('nav.orders')}
+                </Link>
+
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <span className="font-medium">Account</span>
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </SignedIn>
+
+              <div className="h-px bg-border my-2" />
+
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="font-medium text-foreground/80">{t('theme.toggle')}</span>
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-full bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
+                >
+                  {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </nav>
   );
-};
-
-NavBar.propTypes = {
-  searchTerm: PropTypes.string,
-  setSearchTerm: PropTypes.func.isRequired,
-};
-
-export default NavBar;
+}

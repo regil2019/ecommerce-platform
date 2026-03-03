@@ -15,44 +15,230 @@ const router = express.Router()
  * @description Get admin dashboard statistics
  * @access Private (Admin only)
  */
-router.get('/stats', authenticate, isAdmin, async (req, res) => {
+router.get('/stats', authenticate, isAdmin, async (req, res, next) => {
   try {
-    // Calculate total sales (sum of completed orders)
-    const totalSales = await Order.sum('total', {
+    const today = new Date();
+    const last7Days = new Date(today);
+    last7Days.setDate(today.getDate() - 7);
+
+    // 1. Total Revenue & Sales Count
+    const revenueStats = await Order.findOne({
+      attributes: [
+        [db.fn('SUM', db.col('total')), 'total'],
+        [db.fn('COUNT', db.col('id')), 'count']
+      ],
       where: {
-        status: 'completed',
-        PaymentStatus: 'paid'
-      }
-    })
+        status: { [Op.not]: 'cancelled' },
+        paymentStatus: 'paid'
+      },
+      raw: true
+    });
 
-    // Count total products
-    const totalProducts = await Product.count()
-
-    // Count pending orders
+    // 2. Orders Stats
+    const totalOrders = await Order.count();
     const pendingOrders = await Order.count({
-      where: {
-        status: 'pending',
-        PaymentStatus: 'paid'
-      }
-    })
+      where: { status: { [Op.in]: ['pending', 'pending_payment'] } }
+    });
 
-    // Count total users
-    const totalUsers = await User.count()
+    // 3. Products Stats
+    const totalProducts = await Product.count();
+    const inactiveProducts = await Product.count({ where: { isActive: false } }); // Assuming model defines isActive (camelCase in where)
+
+    // 4. Categories Stats
+    const totalCategories = await Category.count();
+    const emptyCategories = 0;
+
+    // 5. Sales & Orders Last 7 Days
+    const salesLast7DaysRaw = await Order.findAll({
+      attributes: [
+        [db.fn('DATE', db.col('created_at')), 'day'],
+        [db.fn('SUM', db.col('total')), 'total'],
+        [db.fn('COUNT', db.col('id')), 'count']
+      ],
+      where: {
+        created_at: { [Op.gte]: last7Days },
+        status: { [Op.not]: 'cancelled' },
+        paymentStatus: 'paid'
+      },
+      group: [db.fn('DATE', db.col('created_at'))],
+      order: [[db.fn('DATE', db.col('created_at')), 'ASC']],
+      raw: true
+    });
+
+    const ordersLast7DaysRaw = await Order.findAll({
+      attributes: [
+        [db.fn('DATE', db.col('created_at')), 'day'],
+        [db.fn('COUNT', db.col('id')), 'count']
+      ],
+      where: {
+        created_at: { [Op.gte]: last7Days }
+      },
+      group: [db.fn('DATE', db.col('created_at'))],
+      order: [[db.fn('DATE', db.col('created_at')), 'ASC']],
+      raw: true
+    });
+
+    // Format charts for frontend
+    const formatDate = (date) => new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+    // Fill missing days with 0
+    const salesLast7Days = [];
+    const ordersLast7Days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLabel = formatDate(d);
+
+      // Robust comparison for DATE strings/objects
+      const saleDay = salesLast7DaysRaw.find(s => {
+        const sDate = s.day instanceof Date ? s.day.toISOString().split('T')[0] : s.day;
+        return sDate === dateStr;
+      });
+      const orderDay = ordersLast7DaysRaw.find(s => {
+        const sDate = s.day instanceof Date ? s.day.toISOString().split('T')[0] : s.day;
+        return sDate === dateStr;
+      });
+
+      salesLast7Days.push({
+        day: dayLabel,
+        vendas: saleDay ? parseFloat(saleDay.total) : 0,
+        total: saleDay ? parseFloat(saleDay.total) : 0
+      });
+
+      ordersLast7Days.push({
+        day: dayLabel,
+        pedidos: orderDay ? parseInt(orderDay.count) : 0
+      });
+    }
+
+    // 6. Recent Orders
+    const recentOrders = await Order.findAll({
+      limit: 5,
+      order: [['created_at', 'DESC']],
+      include: [{ model: User, as: 'user', attributes: ['name', 'email'] }]
+    });
+
+    // 7. Top Selling Products (Safe Manual Fetch)
+    const topItems = await OrderItem.findAll({
+      attributes: [
+        ['product_id', 'id'],
+        [db.fn('SUM', db.col('quantity')), 'totalSold']
+      ],
+      group: ['product_id'],
+      order: [[db.literal('totalSold'), 'DESC']],
+      limit: 5,
+      raw: true
+    });
+
+    const productIds = topItems.map(i => i.id);
+    const productsInfo = await Product.findAll({
+      where: { id: productIds },
+      attributes: ['id', 'name', 'price'],
+      raw: true
+    });
+
+    const topSellingProducts = topItems.map(item => {
+      const prod = productsInfo.find(p => p.id === item.id);
+      return {
+        id: item.id,
+        name: prod ? prod.name : 'Unknown',
+        price: prod ? prod.price : 0,
+        totalSold: parseInt(item.totalSold)
+      };
+    });
 
     res.json({
-      sales: totalSales || 0,
-      products: totalProducts || 0,
-      orders: pendingOrders || 0,
-      users: totalUsers || 0
-    })
+      totalRevenue: {
+        total: revenueStats?.total || 0,
+        count: revenueStats?.count || 0
+      },
+      orders: {
+        total: totalOrders,
+        pending: pendingOrders
+      },
+      products: {
+        total: totalProducts,
+        inactive: inactiveProducts
+      },
+      categories: {
+        total: totalCategories,
+        empty: emptyCategories
+      },
+      salesLast7Days,
+      ordersLast7Days,
+      recentOrders,
+      topSellingProducts
+    });
+
   } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar estatísticas do dashboard',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
+    next(error)
+  }
+})
+
+/**
+ * @route GET /api/admin/analytics/sales
+ * @description Get sales analytics for chart (last 30 days)
+ * @access Private (Admin only)
+ */
+router.get('/analytics/sales', authenticate, isAdmin, async (req, res, next) => {
+  try {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    // Group sales by date
+    const salesData = await Order.findAll({
+      attributes: [
+        [db.fn('DATE', db.col('created_at')), 'date'],
+        [db.fn('SUM', db.col('total')), 'amount'],
+        [db.fn('COUNT', db.col('id')), 'count']
+      ],
+      where: {
+        created_at: {
+          [Op.gte]: thirtyDaysAgo
+        },
+        status: {
+          [Op.ne]: 'cancelled'
+        },
+        paymentStatus: 'paid'
+      },
+      group: [db.fn('DATE', db.col('created_at'))],
+      order: [[db.fn('DATE', db.col('created_at')), 'ASC']],
+      raw: true
     })
+
+    res.json(salesData)
+  } catch (error) {
+    next(error)
+  }
+})
+
+/**
+ * @route GET /api/admin/analytics/top-products
+ * @description Get top selling products
+ * @access Private (Admin only)
+ */
+router.get('/analytics/top-products', authenticate, isAdmin, async (req, res, next) => {
+  try {
+    const topProducts = await OrderItem.findAll({
+      attributes: [
+        ['product_id', 'productId'],
+        [db.fn('SUM', db.col('quantity')), 'totalSold'],
+        [db.fn('SUM', db.literal('price * quantity')), 'revenue']
+      ],
+      include: [{
+        model: Product,
+        attributes: ['name', 'images']
+      }],
+      group: ['product_id', 'Product.id'],
+      order: [[db.literal('totalSold'), 'DESC']],
+      limit: 5
+    })
+
+    res.json(topProducts)
+  } catch (error) {
+    next(error)
   }
 })
 
@@ -61,7 +247,7 @@ router.get('/stats', authenticate, isAdmin, async (req, res) => {
  * @description Get all users (admin only)
  * @access Private (Admin only)
  */
-router.get('/users', authenticate, isAdmin, async (req, res) => {
+router.get('/users', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { page = 1, limit = 50, search } = req.query
     const where = {}
@@ -91,13 +277,7 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Erro ao buscar usuários:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar usuários',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -106,7 +286,7 @@ router.get('/users', authenticate, isAdmin, async (req, res) => {
  * @description Update user role (admin only)
  * @access Private (Admin only)
  */
-router.patch('/users/:id/role', authenticate, isAdmin, async (req, res) => {
+router.patch('/users/:id/role', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { role } = req.body
@@ -138,206 +318,28 @@ router.patch('/users/:id/role', authenticate, isAdmin, async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Erro ao atualizar role:', error)
-    res.status(500).json({
-      error: 'Erro ao atualizar role do usuário',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
-  }
-})
-
-/**
- * @route GET /api/admin/categories
- * @description Get all categories (admin only)
- * @access Private (Admin only)
- */
-router.get('/categories', authenticate, isAdmin, async (req, res) => {
-  try {
-    const { page = 1, limit = 50, search } = req.query
-    const where = {}
-
-    if (search) {
-      where.name = { [Op.like]: `%${search}%` }
-    }
-
-    const { count, rows: categories } = await Category.findAndCountAll({
-      where,
-      attributes: ['id', 'name'],
-      order: [['name', 'ASC']],
-      limit: parseInt(limit),
-      offset: (parseInt(page) - 1) * parseInt(limit)
-    })
-
-    res.json({
-      data: categories,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: count,
-        totalPages: Math.ceil(count / parseInt(limit))
-      }
-    })
-  } catch (error) {
-    console.error('Erro ao buscar categorias:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar categorias',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
-  }
-})
-
-/**
- * @route POST /api/admin/categories
- * @description Create a new category (admin only)
- * @access Private (Admin only)
- */
-router.post('/categories', authenticate, isAdmin, async (req, res) => {
-  try {
-    const { name } = req.body
-
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'Nome da categoria é obrigatório' })
-    }
-
-    // Check if category already exists
-    const existingCategory = await Category.findOne({
-      where: { name: name.trim() }
-    })
-
-    if (existingCategory) {
-      return res.status(400).json({ error: 'Categoria já existe' })
-    }
-
-    const category = await Category.create({ name: name.trim() })
-
-    res.status(201).json({
-      message: 'Categoria criada com sucesso',
-      category
-    })
-  } catch (error) {
-    console.error('Erro ao criar categoria:', error)
-    res.status(500).json({
-      error: 'Erro ao criar categoria',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
-  }
-})
-
-/**
- * @route PUT /api/admin/categories/:id
- * @description Update a category (admin only)
- * @access Private (Admin only)
- */
-router.put('/categories/:id', authenticate, isAdmin, async (req, res) => {
-  try {
-    const { id } = req.params
-    const { name } = req.body
-
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'Nome da categoria é obrigatório' })
-    }
-
-    const category = await Category.findByPk(id)
-    if (!category) {
-      return res.status(404).json({ error: 'Categoria não encontrada' })
-    }
-
-    // Check if another category with the same name exists
-    const existingCategory = await Category.findOne({
-      where: {
-        name: name.trim(),
-        id: { [Op.ne]: id }
-      }
-    })
-
-    if (existingCategory) {
-      return res.status(400).json({ error: 'Já existe uma categoria com este nome' })
-    }
-
-    await category.update({ name: name.trim() })
-
-    res.json({
-      message: 'Categoria atualizada com sucesso',
-      category
-    })
-  } catch (error) {
-    console.error('Erro ao atualizar categoria:', error)
-    res.status(500).json({
-      error: 'Erro ao atualizar categoria',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
-  }
-})
-
-/**
- * @route DELETE /api/admin/categories/:id
- * @description Delete a category (admin only)
- * @access Private (Admin only)
- */
-router.delete('/categories/:id', authenticate, isAdmin, async (req, res) => {
-  try {
-    const { id } = req.params
-
-    const category = await Category.findByPk(id)
-    if (!category) {
-      return res.status(404).json({ error: 'Categoria não encontrada' })
-    }
-
-    // Check if category has associated products
-    const productCount = await Product.count({
-      where: { categoryId: id }
-    })
-
-    if (productCount > 0) {
-      return res.status(400).json({
-        error: 'Não é possível excluir categoria com produtos associados'
-      })
-    }
-
-    await category.destroy()
-
-    res.json({
-      message: 'Categoria excluída com sucesso'
-    })
-  } catch (error) {
-    console.error('Erro ao excluir categoria:', error)
-    res.status(500).json({
-      error: 'Erro ao excluir categoria',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
 /**
  * @route GET /api/admin/products
- * @description Get all products for admin (including zero stock products)
+ * @description Get all products for admin (includes out-of-stock)
  * @access Private (Admin only)
  */
-router.get('/products', authenticate, isAdmin, async (req, res) => {
+router.get('/products', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { page = 1, limit = 10, search } = req.query
-
     const where = {}
 
-    // Filtro por texto
     if (search) {
       where.name = { [Op.like]: `%${search}%` }
     }
 
+    const offset = (parseInt(page) - 1) * parseInt(limit)
+
     const { count, rows: products } = await Product.findAndCountAll({
-      attributes: ['id', 'name', 'price', 'images', 'stock'],
       where,
-      order: [['created_at', 'DESC']],
       include: [
         {
           model: Category,
@@ -345,28 +347,19 @@ router.get('/products', authenticate, isAdmin, async (req, res) => {
           attributes: ['id', 'name']
         }
       ],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit),
-      offset: (parseInt(page) - 1) * parseInt(limit)
+      offset
     })
 
     res.json({
       products,
       totalProducts: count,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: count,
-        totalPages: Math.ceil(count / parseInt(limit))
-      }
+      page: parseInt(page),
+      totalPages: Math.ceil(count / parseInt(limit))
     })
   } catch (error) {
-    console.error('Erro ao buscar produtos para admin:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar produtos',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -375,12 +368,12 @@ router.get('/products', authenticate, isAdmin, async (req, res) => {
  * @description Get all orders (admin only)
  * @access Private (Admin only)
  */
-router.get('/orders', authenticate, isAdmin, async (req, res) => {
+router.get('/orders', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { page = 1, limit = 50, status, search } = req.query
     const where = {}
 
-    if (status) where.status = status
+    if (status && status.trim()) where.status = status
     if (search) {
       where[Op.or] = [
         { '$user.name$': { [Op.like]: `%${search}%` } },
@@ -390,6 +383,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
 
     const { count, rows: orders } = await Order.findAndCountAll({
       where,
+      subQuery: false, // Required when filtering by associated model fields ($user.name$)
       include: [
         {
           model: User,
@@ -398,8 +392,10 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
         },
         {
           model: OrderItem,
+          as: 'orderItems',
           include: [{
             model: Product,
+            as: 'product',
             attributes: ['id', 'name', 'price']
           }]
         }
@@ -419,13 +415,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Erro ao buscar pedidos:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar pedidos',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -434,8 +424,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res) => {
  * @description Update order status (admin only)
  * @access Private (Admin only)
  */
-router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
-  const transaction = await db.transaction()
+router.put('/orders/:id/status', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { status } = req.body
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
@@ -444,7 +433,7 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Status inválido' })
     }
 
-    const order = await Order.findByPk(req.params.id, { transaction })
+    const order = await Order.findByPk(req.params.id)
 
     if (!order) {
       return res.status(404).json({ error: 'Pedido não encontrado' })
@@ -455,8 +444,15 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Não é possível cancelar um pedido já enviado' })
     }
 
-    await order.update({ status }, { transaction })
-    await transaction.commit()
+    // Start transaction only after all validations pass
+    const transaction = await db.transaction()
+    try {
+      await order.update({ status }, { transaction })
+      await transaction.commit()
+    } catch (txError) {
+      await transaction.rollback()
+      throw txError
+    }
 
     // Buscar pedido atualizado para resposta
     const updatedOrder = await Order.findByPk(order.id, {
@@ -468,21 +464,18 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
         },
         {
           model: OrderItem,
-          include: [Product]
+          as: 'orderItems',
+          include: [{
+            model: Product,
+            as: 'product'
+          }]
         }
       ]
     })
 
     res.json(updatedOrder)
   } catch (error) {
-    await transaction.rollback()
-    console.error('Erro ao atualizar status:', error)
-    res.status(500).json({
-      error: 'Erro ao atualizar status do pedido',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -491,7 +484,7 @@ router.put('/orders/:id/status', authenticate, isAdmin, async (req, res) => {
  * @description Update user profile (admin only)
  * @access Private (Admin only)
  */
-router.put('/users/:id', authenticate, isAdmin, async (req, res) => {
+router.put('/users/:id', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { name, email, address } = req.body
@@ -529,13 +522,7 @@ router.put('/users/:id', authenticate, isAdmin, async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error)
-    res.status(500).json({
-      error: 'Erro ao atualizar usuário',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -544,7 +531,7 @@ router.put('/users/:id', authenticate, isAdmin, async (req, res) => {
  * @description Delete user (admin only)
  * @access Private (Admin only)
  */
-router.delete('/users/:id', authenticate, isAdmin, async (req, res) => {
+router.delete('/users/:id', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
 
@@ -575,13 +562,7 @@ router.delete('/users/:id', authenticate, isAdmin, async (req, res) => {
       message: 'Usuário excluído com sucesso'
     })
   } catch (error) {
-    console.error('Erro ao excluir usuário:', error)
-    res.status(500).json({
-      error: 'Erro ao excluir usuário',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 

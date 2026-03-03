@@ -22,15 +22,17 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { Card, CardContent } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from "../../services/categoryApi";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n";
+import { getImageUrl } from "@/lib/utils";
 
-const CategoryCard = ({ category, onEdit, onDelete }) => (
+
+const CategoryCard = ({ category, onEdit, onDelete, t }) => (
   <Card className="overflow-hidden transition-all hover:shadow-lg">
     <div className="relative aspect-video">
       <img
-        src={category.image || "/images/placeholder.jpg"}
+        src={getImageUrl(category.image)}
         alt={category.name}
         className="h-full w-full object-cover"
       />
@@ -43,13 +45,13 @@ const CategoryCard = ({ category, onEdit, onDelete }) => (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(category)}>
-              Editar
+              {t("common.edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(category.id)}
-              className="text-red-600"
+              className="text-destructive"
             >
-              Excluir
+              {t("common.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -57,13 +59,13 @@ const CategoryCard = ({ category, onEdit, onDelete }) => (
     </div>
     <CardContent className="p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{category.name}</h3>
+        <h3 className="text-lg font-semibold text-foreground">{category.name}</h3>
         <Badge variant={category.isActive ? "default" : "secondary"}>
-          {category.isActive ? "Ativa" : "Inativa"}
+          {category.isActive ? t("common.active") : t("common.inactive")}
         </Badge>
       </div>
       <p className="text-sm text-muted-foreground mt-1">
-        {category.productCount || 0} produtos
+        {category.productCount || 0} {t("admin.products").toLowerCase()}
       </p>
       <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
         {category.description}
@@ -78,6 +80,7 @@ const CategoryForm = ({
   editingCategory,
   onSave,
   categories,
+  t,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -141,19 +144,17 @@ const CategoryForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // ✅ VALIDAÇÃO OBRIGATÓRIA
+
     if (!formData.name.trim()) {
-      toast.error("Nome da categoria é obrigatório!");
+      toast.error(t("admin.categoryRequired"));
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const dataToSend = new FormData();
-      
-      // ✅ ADICIONA CAMPOS COM VALORES VÁLIDOS
+
       dataToSend.append("name", formData.name.trim());
       dataToSend.append("slug", formData.slug.trim() || formData.name.trim()
         .toLowerCase()
@@ -162,23 +163,16 @@ const CategoryForm = ({
       dataToSend.append("description", formData.description || "");
       dataToSend.append("isActive", formData.isActive.toString());
 
-      // ✅ ADICIONA IMAGEM SE existir
       if (file) {
         dataToSend.append("image", file);
       } else if (formData.image && !editingCategory) {
         dataToSend.append("image", formData.image);
       }
 
-      console.log("📤 Enviando:", {
-        name: formData.name,
-        slug: formData.slug,
-        hasImage: !!file
-      });
-
       await onSave(dataToSend, editingCategory?.id);
     } catch (error) {
-      console.error("❌ Erro no submit:", error);
-      toast.error("Erro ao salvar categoria");
+      console.error(error);
+      toast.error(t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -186,18 +180,18 @@ const CategoryForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory ? "Editar Categoria" : "Nova Categoria"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCategory ? "Edite os detalhes da categoria existente" : "Crie uma nova categoria para organizar seus produtos"}
-              </DialogDescription>
-            </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {editingCategory ? t("admin.editCategory") : t("admin.newCategory")}
+          </DialogTitle>
+          <DialogDescription>
+            {editingCategory ? t("admin.editCategoryDetails") : t("admin.createCategoryDesc")}
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome *</Label>
+            <Label htmlFor="name">{t("admin.fieldNameRequired")}</Label>
             <Input
               id="name"
               value={formData.name}
@@ -208,7 +202,7 @@ const CategoryForm = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="slug">Slug (URL)</Label>
+            <Label htmlFor="slug">{t("admin.slugUrl")}</Label>
             <Input
               id="slug"
               value={formData.slug}
@@ -219,9 +213,8 @@ const CategoryForm = ({
             />
           </div>
 
-
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">{t("admin.description")}</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -234,11 +227,11 @@ const CategoryForm = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Imagem</Label>
+            <Label>{t("admin.formImage")}</Label>
             <div className="flex items-center justify-center w-full">
               <label
                 htmlFor="dropzone-file"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 p-4 text-center"
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted hover:bg-muted/80 p-4 text-center"
               >
                 {imagePreview ? (
                   <div className="relative">
@@ -265,11 +258,11 @@ const CategoryForm = ({
                   </div>
                 ) : (
                   <>
-                    <ImageIcon className="w-8 h-8 mb-2 text-gray-500" />
-                    <p className="text-sm text-gray-500">
-                      <span className="font-medium">Clique para enviar</span> ou arraste
+                    <ImageIcon className="w-8 h-8 mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">{t("admin.clickToUpload")}</span> {t("admin.orDrag")}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG (máx 2MB)</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("admin.maxFileInfo")}</p>
                   </>
                 )}
                 <input
@@ -294,18 +287,18 @@ const CategoryForm = ({
               disabled={loading}
             />
             <Label htmlFor="isActive" className="text-sm font-normal">
-              Categoria ativa
+              {t("admin.categoryActive")}
             </Label>
           </div>
 
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={loading}>
-                Cancelar
+                {t("common.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : (editingCategory ? "Salvar Alterações" : "Criar Categoria")}
+              {loading ? t("admin.saving") : (editingCategory ? t("admin.saveChanges") : t("admin.newCategory"))}
             </Button>
           </DialogFooter>
         </form>
@@ -315,6 +308,7 @@ const CategoryForm = ({
 };
 
 export default function Categories() {
+  const { t } = useI18n();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -324,42 +318,36 @@ export default function Categories() {
     try {
       setLoading(true);
       const response = await fetchCategories();
-      // The API returns response.data as an array
       const fetchedCategories = Array.isArray(response.data) ? response.data : [];
       setCategories(fetchedCategories);
     } catch (err) {
-      toast.error("Erro ao carregar categorias.");
+      toast.error(t("common.errorLoad"));
       console.error(err);
       setCategories([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
 
   const handleSave = async (data, id) => {
-    console.log("🔥 handleSave chamado:", { 
-      id, 
-      dataEntries: Array.from(data.entries()).map(([k,v]) => [k, v instanceof File ? `${v.name} (${v.size}B)` : v]) 
-    });
-    
     try {
       if (id) {
         await updateCategory(id, data);
-        toast.success("Categoria atualizada com sucesso!");
+        toast.success(t("admin.categoryUpdated"));
       } else {
         await createCategory(data);
-        toast.success("Categoria criada com sucesso!");
+        toast.success(t("admin.categoryCreated"));
       }
       setIsFormOpen(false);
       setEditingCategory(null);
       loadCategories();
     } catch (err) {
-      console.error("❌ ERRO:", err.response?.data || err.message);
-      toast.error(err.response?.data?.message || err.message || "Erro ao salvar categoria.");
+      console.error(err);
+      toast.error(err.response?.data?.message || err.message || t("common.error"));
     }
   };
 
@@ -369,13 +357,13 @@ export default function Categories() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Tem certeza que deseja excluir esta categoria?")) {
+    if (window.confirm(t("admin.confirmDelete"))) {
       try {
         await deleteCategory(id);
-        toast.success("Categoria excluída com sucesso!");
+        toast.success(t("admin.categoryDeleted"));
         loadCategories();
       } catch (err) {
-        toast.error(err.message || "Erro ao excluir categoria.");
+        toast.error(err.message || t("common.error"));
         console.error(err);
       }
     }
@@ -390,26 +378,26 @@ export default function Categories() {
     <div className="flex-1 space-y-6 p-4 pt-6 md:p-8 lg:px-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorias</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("admin.categories")}</h1>
           <p className="text-muted-foreground mt-1">
-            {categories.length} categorias {categories.length === 1 ? 'cadastrada' : 'cadastradas'}
+            {t("admin.categoriesCount", { count: categories.length })}
           </p>
         </div>
         <Button onClick={handleAddNew}>
-          <Plus className="mr-2 h-4 w-4" /> Nova Categoria
+          <Plus className="mr-2 h-4 w-4" /> {t("admin.newCategory")}
         </Button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="text-lg text-muted-foreground">Carregando categorias...</div>
+          <div className="text-lg text-muted-foreground">{t("common.loadingCategories")}</div>
         </div>
       ) : categories.length === 0 ? (
         <div className="text-center py-12">
           <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Nenhuma categoria</h3>
-          <p className="text-muted-foreground mb-6">Crie sua primeira categoria para começar.</p>
-          <Button onClick={handleAddNew}>Criar primeira categoria</Button>
+          <h3 className="text-lg font-semibold mb-2 text-foreground">{t("admin.noCategoryYet")}</h3>
+          <p className="text-muted-foreground mb-6">{t("admin.createFirstCategoryDesc")}</p>
+          <Button onClick={handleAddNew}>{t("admin.createFirstCategory")}</Button>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -419,6 +407,7 @@ export default function Categories() {
               category={category}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              t={t}
             />
           ))}
         </div>
@@ -430,6 +419,7 @@ export default function Categories() {
         editingCategory={editingCategory}
         onSave={handleSave}
         categories={categories}
+        t={t}
       />
     </div>
   );

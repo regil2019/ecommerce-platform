@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useUser } from '@clerk/clerk-react';
 import {
   File,
   Search,
@@ -46,10 +47,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import api from "@/services/api";
-import { fetchOrders, updateOrderStatus } from "@/services/orderApi";
+import { updateOrderStatus } from "@/services/orderApi";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "@/i18n";
 
 const getStatusVariant = (status) => {
   switch (status) {
@@ -69,6 +71,8 @@ const getStatusVariant = (status) => {
 };
 
 export default function AdminOrders() {
+  const { t } = useI18n();
+  const { isLoaded, isSignedIn } = useUser();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -83,40 +87,39 @@ export default function AdminOrders() {
   const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
-      // Use the admin orders endpoint
-      const response = await api.get('/admin/orders', {
+      const response = await api.get("/admin/orders", {
         params: {
           page: pagination.page,
           limit: pagination.limit,
           search: searchTerm,
-          status: statusFilter === "all" ? "" : statusFilter
-        }
+          status: statusFilter === "all" ? "" : statusFilter,
+        },
       });
-      // The API returns { data: orders, pagination: {...} }
       const ordersData = response.data?.data || [];
       const total = response.data?.pagination?.total || 0;
       setOrders(ordersData);
       setPagination((prev) => ({ ...prev, total }));
     } catch (error) {
-      toast.error("Erro ao carregar pedidos.");
-      console.error(error);
+      toast.error(t("common.errorLoad"));
+      console.error("Admin orders error:", error);
     } finally {
       setLoading(false);
     }
   }, [pagination.page, pagination.limit, searchTerm, statusFilter]);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     loadOrders();
-  }, [loadOrders]);
+  }, [loadOrders, isLoaded, isSignedIn]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await updateOrderStatus(orderId, newStatus);
-      toast.success("Status do pedido atualizado com sucesso!");
+      toast.success(t("admin.statusUpdated"));
       loadOrders();
     } catch (error) {
-      toast.error("Erro ao atualizar o status do pedido.");
-      console.error(error);
+      toast.error(t("common.error"));
+      console.error("Status update error:", error);
     }
   };
 
@@ -131,18 +134,18 @@ export default function AdminOrders() {
       <Tabs defaultValue="all" onValueChange={setStatusFilter}>
         <div className="flex items-center">
           <TabsList>
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pending">Pendente</TabsTrigger>
-            <TabsTrigger value="processing">Processando</TabsTrigger>
-            <TabsTrigger value="shipped">Enviado</TabsTrigger>
-            <TabsTrigger value="delivered">Entregue</TabsTrigger>
-            <TabsTrigger value="cancelled">Cancelado</TabsTrigger>
+            <TabsTrigger value="all">{t("common.all")}</TabsTrigger>
+            <TabsTrigger value="pending">{t("orders.pending")}</TabsTrigger>
+            <TabsTrigger value="processing">{t("orders.processing")}</TabsTrigger>
+            <TabsTrigger value="shipped">{t("orders.shipped")}</TabsTrigger>
+            <TabsTrigger value="delivered">{t("orders.delivered")}</TabsTrigger>
+            <TabsTrigger value="cancelled">{t("orders.cancelled")}</TabsTrigger>
           </TabsList>
           <div className="ml-auto flex items-center gap-2">
             <Button size="sm" variant="outline" className="h-7 gap-1">
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Exportar
+                {t("admin.exportCSV")}
               </span>
             </Button>
           </div>
@@ -150,15 +153,15 @@ export default function AdminOrders() {
         <TabsContent value={statusFilter}>
           <Card>
             <CardHeader>
-              <CardTitle>Pedidos</CardTitle>
-              <CardDescription>
-                Gerencie seus pedidos e visualize os detalhes.
+              <CardTitle>{t("admin.orders")}</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {t("common.description")}
               </CardDescription>
               <div className="relative mt-4">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Buscar pedidos..."
+                  placeholder={t("admin.searchOrders")}
                   className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -169,25 +172,25 @@ export default function AdminOrders() {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableHeader>Cliente</TableHeader>
+                    <TableHeader>{t("orders.customer")}</TableHeader>
                     <TableHeader className="hidden sm:table-cell">
-                      Tipo
+                      {t("orders.type")}
                     </TableHeader>
                     <TableHeader className="hidden sm:table-cell">
-                      Status
+                      {t("common.status")}
                     </TableHeader>
-                    <TableHeader className="hidden md:table-cell">Data</TableHeader>
-                    <TableHeader className="text-right">Total</TableHeader>
+                    <TableHeader className="hidden md:table-cell">{t("orders.date")}</TableHeader>
+                    <TableHeader className="text-right">{t("common.total")}</TableHeader>
                     <TableHeader>
-                      <span className="sr-only">Ações</span>
+                      <span className="sr-only">{t("common.actions")}</span>
                     </TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        Carregando...
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        {t("common.loading")}
                       </TableCell>
                     </TableRow>
                   ) : orders.length > 0 ? (
@@ -202,7 +205,7 @@ export default function AdminOrders() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          Venda
+                          {t("orders.sale")}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <Select
@@ -219,17 +222,11 @@ export default function AdminOrders() {
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pending">Pendente</SelectItem>
-                              <SelectItem value="processing">
-                                Processando
-                              </SelectItem>
-                              <SelectItem value="shipped">Enviado</SelectItem>
-                              <SelectItem value="delivered">
-                                Entregue
-                              </SelectItem>
-                              <SelectItem value="cancelled">
-                                Cancelado
-                              </SelectItem>
+                              <SelectItem value="pending">{t("orders.pending")}</SelectItem>
+                              <SelectItem value="processing">{t("orders.processing")}</SelectItem>
+                              <SelectItem value="shipped">{t("orders.shipped")}</SelectItem>
+                              <SelectItem value="delivered">{t("orders.delivered")}</SelectItem>
+                              <SelectItem value="cancelled">{t("orders.cancelled")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -248,20 +245,20 @@ export default function AdminOrders() {
                                 variant="ghost"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
+                                <span className="sr-only">{t("common.actions")}</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                              <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
                               <DropdownMenuItem
                                 onClick={() =>
                                   navigate(`/admin/orders/${order.id}`)
                                 }
                               >
-                                Ver Detalhes
+                                {t("orders.viewDetails")}
                               </DropdownMenuItem>
                               <DropdownMenuItem>
-                                Ver Cliente
+                                {t("orders.viewCustomer")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -270,8 +267,8 @@ export default function AdminOrders() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        Nenhum pedido encontrado.
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        {t("common.noResults")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -280,19 +277,10 @@ export default function AdminOrders() {
             </CardContent>
             <CardFooter>
               <div className="text-xs text-muted-foreground">
-                Mostrando{" "}
-                <strong>
-                  {Math.min(
-                    (pagination.page - 1) * pagination.limit + 1,
-                    pagination.total
-                  )}
-                  -
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.total
-                  )}
-                </strong>{" "}
-                de <strong>{pagination.total}</strong> pedidos
+                {t("common.page", {
+                  current: pagination.page,
+                  total: totalPages || 1,
+                })}
               </div>
               <Pagination className="ml-auto">
                 <PaginationContent>
@@ -304,7 +292,7 @@ export default function AdminOrders() {
                       disabled={pagination.page === 1}
                     >
                       <ChevronLeft className="h-4 w-4" />
-                      Anterior
+                      {t("common.previous")}
                     </Button>
                   </PaginationItem>
                   <PaginationItem>
@@ -314,7 +302,7 @@ export default function AdminOrders() {
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={pagination.page >= totalPages}
                     >
-                      Próximo
+                      {t("common.next")}
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </PaginationItem>

@@ -1,8 +1,8 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; // Force Rebuild
 import { ShoppingCart } from "lucide-react";
-import { formatCurrency } from "../lib/utils";
+import { formatCurrency, getImageUrl } from "../lib/utils";
 import useCart from "../hooks/useCart";
+import { useI18n } from "../i18n";
 import FavoriteButton from "./FavoriteButton";
 import {
   Carousel,
@@ -11,11 +11,13 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "./ui/carousel";
-import { Button } from "./ui/Button";
+import { RainbowButton } from "./magicui/RainbowButton";
+import { MagicCard } from "./magicui/MagicCard";
 import { Badge } from "./ui/badge";
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
+  const { t } = useI18n();
 
   if (!product) return null;
 
@@ -24,29 +26,33 @@ const ProductCard = ({ product }) => {
     addToCart(product);
   };
 
+
   const images =
     product.images && product.images.length > 0
-      ? product.images
-      : [product.image || "/images/placeholder.jpg"];
+      ? product.images.map(img => getImageUrl(img))
+      : [getImageUrl(product.main_image)];
 
   const isOutOfStock = !product.stock || product.stock <= 0;
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
+    <MagicCard
+      className="group relative flex h-full flex-col overflow-hidden"
+      spotlightColor="rgba(59, 130, 246, 0.1)" // Primary color spotlight
+    >
       <Link
         to={`/product/${product.id}`}
         className="absolute inset-0 z-10"
         aria-label={product.name}
       />
 
-      <div className="relative aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden bg-white/50 dark:bg-black/20">
         <Carousel className="h-full w-full">
           <CarouselContent>
             {images.map((img, idx) => (
               <CarouselItem key={idx}>
                 <img
-                  src={img || "/images/placeholder.jpg"}
-                  alt={`${product.name} - imagem ${idx + 1}`}
+                  src={img || "/images/placeholder-product.jpg"}
+                  alt={`${product.name} - ${idx + 1}`}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
                 />
@@ -66,7 +72,7 @@ const ProductCard = ({ product }) => {
         {product.category?.name && (
           <Badge
             variant="secondary"
-            className="absolute top-3 left-3 z-20"
+            className="absolute top-3 left-3 z-20 opacity-90 backdrop-blur-sm"
           >
             {product.category.name}
           </Badge>
@@ -74,30 +80,30 @@ const ProductCard = ({ product }) => {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-1 flex-1 font-semibold leading-tight text-gray-800 dark:text-gray-100">
+        <h3 className="mb-1 flex-1 font-semibold leading-tight text-foreground">
           {product.name}
         </h3>
-        <p className="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
+        <p className="mb-3 text-2xl font-bold text-foreground">
           {formatCurrency(product.price)}
         </p>
 
-        <Button
+        <RainbowButton
           onClick={handleAddToCart}
           disabled={isOutOfStock}
           className="relative z-20 mt-auto w-full"
-          aria-label="Adicionar ao carrinho"
+          aria-label={t('product.addToCart')}
         >
           {isOutOfStock ? (
-            "Indisponível"
+            t('product.outOfStock')
           ) : (
             <>
               <ShoppingCart className="mr-2 h-4 w-4" />
-              Adicionar
+              {t('product.addToCart')}
             </>
           )}
-        </Button>
+        </RainbowButton>
       </div>
-    </div>
+    </MagicCard>
   );
 };
 

@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/Card";
@@ -21,6 +20,7 @@ import { fetchOrders } from "@/services/orderApi";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "@/i18n";
 
 const getStatusVariant = (status) => {
   switch (status) {
@@ -40,6 +40,7 @@ const getStatusVariant = (status) => {
 };
 
 export default function OrderHistory() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ export default function OrderHistory() {
         const data = await fetchOrders();
         setOrders(data.orders || []);
       } catch (err) {
-        toast.error("Erro ao carregar pedidos");
+        toast.error(t("common.errorLoad"));
       } finally {
         setLoading(false);
       }
@@ -60,31 +61,31 @@ export default function OrderHistory() {
   }, []);
 
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
       <Card>
         <CardHeader>
-          <CardTitle>Meus Pedidos</CardTitle>
-          <CardDescription>
-            Acompanhe o status dos seus pedidos recentes.
+          <CardTitle>{t("orders.myOrders")}</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            {t("orders.trackStatus")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Carregando...</div>
+            <div className="py-8 text-center text-muted-foreground">{t("common.loading")}</div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum pedido encontrado.
+            <div className="py-8 text-center text-muted-foreground">
+              {t("common.noResults")}
             </div>
           ) : (
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableHeader>Pedido</TableHeader>
-                  <TableHeader>Data</TableHeader>
-                  <TableHeader>Status</TableHeader>
-                  <TableHeader className="text-right">Total</TableHeader>
+                  <TableHeader>{t("orders.order")}</TableHeader>
+                  <TableHeader>{t("orders.date")}</TableHeader>
+                  <TableHeader>{t("common.status")}</TableHeader>
+                  <TableHeader className="text-right">{t("common.total")}</TableHeader>
                   <TableHeader>
-                    <span className="sr-only">Ações</span>
+                    <span className="sr-only">{t("common.actions")}</span>
                   </TableHeader>
                 </TableRow>
               </TableHead>
@@ -107,7 +108,7 @@ export default function OrderHistory() {
                         size="sm"
                         onClick={() => navigate(`/orders/${order.id}`)}
                       >
-                        Ver Detalhes
+                        {t("orders.viewDetails")}
                       </Button>
                     </TableCell>
                   </TableRow>

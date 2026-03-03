@@ -18,7 +18,7 @@ const router = express.Router()
  * @description Finaliza o carrinho e cria um novo pedido
  * @access Private
  */
-router.post('/checkout', authenticate, async (req, res) => {
+router.post('/checkout', authenticate, async (req, res, next) => {
   const transaction = await db.transaction()
 
   try {
@@ -27,6 +27,7 @@ router.post('/checkout', authenticate, async (req, res) => {
       where: { userId: req.user.id },
       include: [{
         model: Product,
+        as: 'product',
         attributes: ['id', 'name', 'price', 'stock'],
         required: true
       }],
@@ -42,12 +43,13 @@ router.post('/checkout', authenticate, async (req, res) => {
     const stockErrors = []
 
     for (const item of cartItems) {
+      const prod = item.product || item.Product
       if (item.quantity < 1) {
-        stockErrors.push(`Quantidade inválida para ${item.Product.name}`)
-      } else if (item.quantity > item.Product.stock) {
-        stockErrors.push(`Estoque insuficiente para ${item.Product.name}`)
+        stockErrors.push(`Invalid quantity for ${prod.name}`)
+      } else if (item.quantity > prod.stock) {
+        stockErrors.push(`Insufficient stock for ${prod.name}`)
       }
-      total += item.quantity * item.Product.price
+      total += item.quantity * prod.price
     }
 
     if (stockErrors.length > 0) {
@@ -62,7 +64,7 @@ router.post('/checkout', authenticate, async (req, res) => {
       userId: req.user.id,
       total,
       status: 'pending',
-      PaymentStatus: 'pending',
+      paymentStatus: 'pending',
       shippingAddress: req.user.address // Assume que o User tem um campo 'address'
     }, { transaction })
 
@@ -73,10 +75,10 @@ router.post('/checkout', authenticate, async (req, res) => {
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
-          price: item.Product.price
+          price: (item.product || item.Product).price
         }, { transaction })
 
-        await item.Product.decrement('stock', {
+        await (item.product || item.Product).decrement('stock', {
           by: item.quantity,
           transaction
         })
@@ -93,8 +95,10 @@ router.post('/checkout', authenticate, async (req, res) => {
     const completeOrder = await Order.findByPk(order.id, {
       include: [{
         model: OrderItem,
+        as: 'orderItems',
         include: [{
           model: Product,
+          as: 'product',
           attributes: ['id', 'name', 'price', 'images']
         }]
       }],
@@ -105,7 +109,7 @@ router.post('/checkout', authenticate, async (req, res) => {
 
     // Track purchase behavior for each order item
     try {
-      const orderItems = completeOrder.OrderItems || []
+      const orderItems = completeOrder.orderItems || completeOrder.OrderItems || []
       await behaviorService.trackPurchase(req.user.id, orderItems)
     } catch (behaviorError) {
       console.error('Error tracking purchase behavior:', behaviorError)
@@ -115,14 +119,7 @@ router.post('/checkout', authenticate, async (req, res) => {
     res.status(201).json(completeOrder)
   } catch (error) {
     await transaction.rollback()
-    console.error('Erro no checkout:', error)
-    res.status(500).json({
-      error: 'Erro ao processar checkout',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message,
-        stack: error.stack
-      })
-    })
+    next(error)
   }
 })
 
@@ -131,7 +128,7 @@ router.post('/checkout', authenticate, async (req, res) => {
  * @description Lista todos os pedidos do usuário com filtros
  * @access Private
  */
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res, next) => {
   try {
     const { status, startDate, endDate, page = 1, limit = 10 } = req.query
     const where = { userId: req.user.id }
@@ -148,8 +145,10 @@ router.get('/', authenticate, async (req, res) => {
       where,
       include: [{
         model: OrderItem,
+        as: 'orderItems',
         include: [{
           model: Product,
+          as: 'product',
           attributes: ['id', 'name', 'price', 'images']
         }]
       }],
@@ -168,13 +167,7 @@ router.get('/', authenticate, async (req, res) => {
       }
     })
   } catch (error) {
-    console.error('Erro ao buscar pedidos:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar histórico de pedidos',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -183,7 +176,7 @@ router.get('/', authenticate, async (req, res) => {
  * @description Obtém detalhes de um pedido específico
  * @access Private (apenas dono do pedido ou admin)
  */
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, async (req, res, next) => {
   try {
     const where = { id: req.params.id }
 
@@ -196,8 +189,10 @@ router.get('/:id', authenticate, async (req, res) => {
       where,
       include: [{
         model: OrderItem,
+        as: 'orderItems',
         include: [{
           model: Product,
+          as: 'product',
           attributes: ['id', 'name', 'price', 'images', 'description']
         }]
       }]
@@ -209,13 +204,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
     res.json(order)
   } catch (error) {
-    console.error('Erro ao buscar pedido:', error)
-    res.status(500).json({
-      error: 'Erro ao buscar detalhes do pedido',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 
@@ -224,7 +213,7 @@ router.get('/:id', authenticate, async (req, res) => {
  * @description Atualiza o status de um pedido (apenas admin)
  * @access Private (Admin)
  */
-router.patch('/:id/status', authenticate, isAdmin, async (req, res) => {
+router.patch('/:id/status', authenticate, isAdmin, async (req, res, next) => {
   const transaction = await db.transaction()
   try {
     const { status } = req.body
@@ -271,20 +260,18 @@ router.patch('/:id/status', authenticate, isAdmin, async (req, res) => {
     const updatedOrder = await Order.findByPk(order.id, {
       include: [{
         model: OrderItem,
-        include: [Product]
+        as: 'orderItems',
+        include: [{
+          model: Product,
+          as: 'product'
+        }]
       }]
     })
 
     res.json(updatedOrder)
   } catch (error) {
     await transaction.rollback()
-    console.error('Erro ao atualizar status:', error)
-    res.status(500).json({
-      error: 'Erro ao atualizar status do pedido',
-      ...(process.env.NODE_ENV !== 'production' && {
-        details: error.message
-      })
-    })
+    next(error)
   }
 })
 

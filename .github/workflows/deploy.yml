@@ -28,7 +28,7 @@ jobs:
     
     strategy:
       matrix:
-        service: [backend, frontend]
+        service: [backend, ecommerce-frontend]
     
     steps:
       - name: 📥 Checkout code
@@ -68,8 +68,8 @@ jobs:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
       - name: 📊 Frontend Build Test
-        if: matrix.service == 'frontend'
-        working-directory: ./front-end
+        if: matrix.service == 'ecommerce-frontend'
+        working-directory: ./ecommerce-frontend
         run: |
           pnpm install --frozen-lockfile
           pnpm run build
@@ -84,8 +84,8 @@ jobs:
           pnpm run typecheck || true
 
       - name: 🔍 Code Quality Check - Frontend
-        if: matrix.service == 'frontend'
-        working-directory: ./front-end
+        if: matrix.service == 'ecommerce-frontend'
+        working-directory: ./ecommerce-frontend
         run: |
           pnpm run lint
           pnpm run typecheck || true
@@ -129,7 +129,7 @@ jobs:
       - name: 🔒 Scan Dependencies
         run: |
           cd backend && pnpm audit --audit-level=high
-          cd ../front-end && pnpm audit --audit-level=high
+          cd ../ecommerce-frontend && pnpm audit --audit-level=high
 
   # =============================================================================
   # DOCKER IMAGE BUILDING (Multi-arch)
@@ -141,7 +141,7 @@ jobs:
     
     strategy:
       matrix:
-        service: [backend, frontend]
+        service: [backend, ecommerce-frontend]
     
     steps:
       - name: 📥 Checkout code
@@ -221,7 +221,7 @@ jobs:
           
           # Pull latest images
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:develop
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:develop
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ecommerce-frontend:develop
           
           # Stop existing containers
           docker-compose -f docker-compose.prod.yml down || true
@@ -282,7 +282,7 @@ jobs:
           
           # Pull latest images
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:main
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ecommerce-frontend:main
           
           # Stop existing containers
           docker-compose -f docker-compose.prod.yml down

@@ -9,11 +9,23 @@ COPY package*.json ./
 
 # Install dependencies (use pnpm if available)
 RUN if [ -f pnpm-lock.yaml ]; then \
-        npm install -g pnpm && \
-        pnpm install --frozen-lockfile; \
+    npm install -g pnpm && \
+    pnpm install --frozen-lockfile; \
     else \
-        npm install; \
+    npm install; \
     fi
+
+# Build arguments
+ARG VITE_API_URL
+ARG VITE_CLOUDINARY_CLOUD_NAME
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_CLERK_PUBLISHABLE_KEY
+
+# Set environment variables for build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_CLOUDINARY_CLOUD_NAME=$VITE_CLOUDINARY_CLOUD_NAME
+ENV VITE_STRIPE_PUBLISHABLE_KEY=$VITE_STRIPE_PUBLISHABLE_KEY
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
 
 # Copy source code
 COPY . .

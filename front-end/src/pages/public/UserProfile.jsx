@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
+import { useI18n } from '@/i18n';
 
 export default function UserProfile() {
+  const { t } = useI18n();
   const { user, login } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -46,7 +48,7 @@ export default function UserProfile() {
     setLoading(true);
     try {
       if (!formData.name.trim()) {
-        toast.error('Nome é obrigatório');
+        toast.error(t('profile.nameRequired'));
         return;
       }
       const payload = {
@@ -55,89 +57,89 @@ export default function UserProfile() {
       };
       const { data } = await api.put('/auth/profile', payload);
       login(data.user, localStorage.getItem('token'));
-      toast.success('Perfil atualizado com sucesso!');
+      toast.success(t('profile.updateSuccess'));
       setIsEditing(false);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Erro ao atualizar perfil');
+      toast.error(err.response?.data?.error || t('profile.updateError'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-12 bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Meu Perfil</h2>
+    <div className="max-w-md mx-auto mt-12 bg-card p-8 rounded-lg shadow-md border border-border">
+      <h2 className="text-2xl font-bold mb-6 text-center text-foreground">{t('profile.title')}</h2>
       {!isEditing ? (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Nome</label>
-            <p className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50">{formData.name}</p>
+            <label className="block text-sm font-medium text-muted-foreground">{t('common.name')}</label>
+            <p className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-muted text-foreground">{formData.name}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <p className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50">{formData.email}</p>
+            <label className="block text-sm font-medium text-muted-foreground">{t('common.email')}</label>
+            <p className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-muted text-foreground">{formData.email}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Endereço</label>
-            <p className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50">{formData.address || 'Não informado'}</p>
+            <label className="block text-sm font-medium text-muted-foreground">{t('profile.address')}</label>
+            <p className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-muted text-foreground">{formData.address || t('profile.notProvided')}</p>
           </div>
           <button
             onClick={handleEdit}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
-            Editar Perfil
+            {t('profile.editProfile')}
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome</label>
+            <label htmlFor="name" className="block text-sm font-medium text-muted-foreground">{t('common.name')}</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-primary focus:border-primary"
               required
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-muted-foreground">{t('common.email')}</label>
             <input
               type="email"
               id="email"
               name="email"
               value={formData.email}
               disabled
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed"
+              className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-muted text-muted-foreground cursor-not-allowed"
             />
           </div>
           <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700">Endereço</label>
+            <label htmlFor="address" className="block text-sm font-medium text-muted-foreground">{t('profile.address')}</label>
             <input
               type="text"
               id="address"
               name="address"
               value={formData.address}
               onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 border border-border rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-primary focus:border-primary"
             />
           </div>
           <div className="flex space-x-4">
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {loading ? 'Salvando...' : 'Salvar'}
+              {loading ? t('admin.saving') : t('common.save')}
             </button>
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="flex-1 flex justify-center py-2 px-4 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
           </div>
         </form>
