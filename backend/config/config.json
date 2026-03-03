@@ -34,5 +34,25 @@
     "retry": {
       "max": 3
     }
+  },
+  "production": {
+    "username": "${DB_USER}",
+    "password": "${DB_PASSWORD}",
+    "database": "${DB_NAME}",
+    "host": "${DB_HOST}",
+    "port": 4000,
+    "dialect": "mysql",
+    "dialectOptions": {
+      "ssl": {
+        "rejectUnauthorized": true
+      }
+    },
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    },
+    "logging": false
   }
 }
