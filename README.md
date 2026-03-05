@@ -368,6 +368,7 @@ The automated pipeline includes:
 - [Stripe](https://stripe.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
+- [Magic/ui](https://magicui.design)
 - [Docker](https://www.docker.com/)
 
 ---
