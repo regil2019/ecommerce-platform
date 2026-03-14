@@ -10,7 +10,7 @@ const Order = db.define('Order', {
   },
   userId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true  // permite NULL para ON DELETE SET NULL na FK com customers
   },
   status: {
     type: DataTypes.ENUM('pending', 'pending_payment', 'processing', 'shipped', 'delivered', 'cancelled'),

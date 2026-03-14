@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth } from "../hooks/useAuth";
 import Slider from "react-slick";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
@@ -35,7 +35,7 @@ function PrevArrow(props) {
 
 const ProductSuggestions = ({ limit = 8 }) => {
   const { t } = useI18n();
-  const { isSignedIn } = useUser();
+  const { user } = useAuth();
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,7 +61,7 @@ const ProductSuggestions = ({ limit = 8 }) => {
         setError(null);
 
         // Only call personalized endpoint if user is authenticated
-        if (isSignedIn) {
+        if (user) {
           const response = await api.get("/recommendations/personalized", {
             params: { limit },
           });
@@ -82,7 +82,7 @@ const ProductSuggestions = ({ limit = 8 }) => {
     };
 
     fetchSuggestions();
-  }, [limit, isSignedIn]);
+  }, [limit, user]);
 
 
   const settings = {

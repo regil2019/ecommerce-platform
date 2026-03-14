@@ -5,16 +5,13 @@ import useCart from '../hooks/useCart';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useI18n } from '../i18n';
-import Login from '../pages/public/Login';
-import Register from '../pages/public/Register';
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 
 export default function NavBar({ searchTerm, setSearchTerm }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { cartItems: cart } = useCart();
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth(); // Keeps compatibility
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t, locale, setLocale, LOCALES } = useI18n();
 
@@ -110,40 +107,56 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
             </button>
 
             {/* Auth Actions */}
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-primary/40 transform hover:-translate-y-0.5">
-                  {t('nav.login')}
-                </button>
-              </SignInButton>
-            </SignedOut>
+            {!user ? (
+              <Link
+                to="/login"
+                className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-primary/40 transform hover:-translate-y-0.5"
+              >
+                {t('nav.login')}
+              </Link>
+            ) : (
+              <>
+                {user.role === 'admin' && (
+                  <Link to="/admin" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                    <LayoutDashboard size={20} />
+                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      Dashboard
+                    </span>
+                  </Link>
+                )}
 
-            <SignedIn>
-              {user?.role === 'admin' && (
-                <Link to="/admin" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                  <LayoutDashboard size={20} />
+                <Link to="/favorites" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                  <Heart size={20} />
                   <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    Dashboard
+                    {t('nav.favorites')}
                   </span>
                 </Link>
-              )}
 
-              <Link to="/favorites" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                <Heart size={20} />
-                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  {t('nav.favorites')}
-                </span>
-              </Link>
+                <Link to="/orders" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                  <Package size={20} />
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    {t('nav.orders')}
+                  </span>
+                </Link>
 
-              <Link to="/orders" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                <Package size={20} />
-                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  {t('nav.orders')}
-                </span>
-              </Link>
+                <Link to="/profile" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold">
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                </Link>
 
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-full hover:bg-secondary text-foreground/80 hover:text-destructive transition-colors relative group"
+                  title="Logout"
+                >
+                  <LogOut size={20} />
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    {t('nav.logout')}
+                  </span>
+                </button>
+              </>
+            )}
 
             <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
               <ShoppingCart size={24} />
@@ -210,60 +223,74 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
 
               <div className="h-px bg-border my-2" />
 
-              <SignedOut>
-                <Link
-                  to="/login"
-                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <User size={20} />
-                  {t('nav.login')}
-                </Link>
-
-                <Link
-                  to="/register"
-                  className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-center shadow-lg shadow-primary/25 mt-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('nav.register')}
-                </Link>
-              </SignedOut>
-
-              <SignedIn>
-                {user?.role === 'admin' && (
+              {!user ? (
+                <>
                   <Link
-                    to="/admin"
+                    to="/login"
                     className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <Box size={20} />
-                    Dashboard
+                    <User size={20} />
+                    {t('nav.login')}
                   </Link>
-                )}
 
-                <Link
-                  to="/favorites"
-                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Heart size={20} />
-                  {t('nav.favorites')}
-                </Link>
+                  <Link
+                    to="/register"
+                    className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-center shadow-lg shadow-primary/25 mt-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('nav.register')}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {user.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <LayoutDashboard size={20} />
+                      Dashboard
+                    </Link>
+                  )}
 
-                <Link
-                  to="/orders"
-                  className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Package size={20} />
-                  {t('nav.orders')}
-                </Link>
+                  <Link
+                    to="/favorites"
+                    className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Heart size={20} />
+                    {t('nav.favorites')}
+                  </Link>
 
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="font-medium">Account</span>
-                  <UserButton afterSignOutUrl="/" />
-                </div>
-              </SignedIn>
+                  <Link
+                    to="/orders"
+                    className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Package size={20} />
+                    {t('nav.orders')}
+                  </Link>
+
+                  <Link
+                    to="/profile"
+                    className="px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-3"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User size={20} />
+                    {t('nav.profile')}
+                  </Link>
+
+                  <button
+                    onClick={() => { logout(); setIsMenuOpen(false); }}
+                    className="px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors flex items-center gap-3 w-full text-left"
+                  >
+                    <LogOut size={20} />
+                    {t('nav.logout')}
+                  </button>
+                </>
+              )}
 
               <div className="h-px bg-border my-2" />
 

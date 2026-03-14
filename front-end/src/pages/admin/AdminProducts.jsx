@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   PlusCircle,
   MoreHorizontal,
@@ -50,7 +50,7 @@ import { useI18n } from "@/i18n";
 
 export default function AdminProducts() {
   const { t } = useI18n();
-  const { isLoaded, isSignedIn } = useUser();
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -81,9 +81,9 @@ export default function AdminProducts() {
   }, [pagination.page, pagination.limit, searchTerm]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!user) return;
     loadProducts();
-  }, [loadProducts, isLoaded, isSignedIn]);
+  }, [loadProducts, user]);
 
   const handleDelete = async (id) => {
     if (window.confirm(t("admin.confirmDelete"))) {

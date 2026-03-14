@@ -8,40 +8,8 @@ const api = axios.create({
   }
 });
 
-// --- Rate Limiting ---
-const requestQueue = [];
-let isProcessing = false;
-
-const processRequest = async (config) => {
-  if (isProcessing) {
-    return new Promise((resolve, reject) => {
-      requestQueue.push({ config, resolve, reject });
-    });
-  }
-
-  isProcessing = true;
-  setTimeout(() => {
-    isProcessing = false;
-    if (requestQueue.length > 0) {
-      const next = requestQueue.shift();
-      next.resolve(next.config);
-    }
-  }, 50);
-
-  return config;
-};
-
-// --- Token Provider for Clerk ---
-let getToken = null;
-export const setTokenProvider = (fn) => {
-  getToken = fn;
-};
-
 // --- Request Interceptor ---
-api.interceptors.request.use(async (config) => {
-  // Rate limiting
-  // await processRequest(config); // Temporarily disabled if causing issues, but keeping it is fine if it works.
-
+api.interceptors.request.use((config) => {
   // Remove Content-Type for FormData (let browser set it)
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
@@ -52,34 +20,22 @@ api.interceptors.request.use(async (config) => {
     config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
     config.headers['Pragma'] = 'no-cache';
     config.headers['Expires'] = '0';
-    config.params = { ...config.params, _t: Date.now() }; // Bust cache with timestamp
+    config.params = { ...config.params, _t: Date.now() };
   }
 
-  // Attach auth token from Clerk — with timeout so network issues don't block public requests
-  if (getToken) {
-    try {
-      const tokenPromise = getToken();
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Token fetch timed out')), 5000)
-      );
-      const token = await Promise.race([tokenPromise, timeoutPromise]);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      // Silently continue — public endpoints work without auth, protected ones will 401
-      console.warn('[API] Auth token unavailable:', error.message);
-    }
+  // Attach JWT token from localStorage
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
 });
 
-// --- Response Interceptor (Resilient Error Handling) ---
+// --- Response Interceptor ---
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Network error (no response received)
     if (!error.response) {
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         error.userMessage = 'Request timed out. Please try again.';
@@ -91,12 +47,12 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const { status, config, data } = error.response;
+    const { status, data } = error.response;
 
     switch (status) {
       case 401: {
-        // Clerk handles auth state, so we just return the error.
-        // Frontend components should react to specific 401s if needed (e.g., refreshing data).
+        // Clear invalid/expired token automatically
+        localStorage.removeItem('token');
         error.userMessage = data?.message || 'Session expired.';
         error.userMessageKey = 'common.errorUnauthorized';
         break;

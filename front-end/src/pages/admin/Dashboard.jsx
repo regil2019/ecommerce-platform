@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '../../hooks/useAuth';
 import { DollarSign, ShoppingCart, Package, BarChart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import StatCard from "../../components/admin/StatCard";
@@ -35,13 +35,13 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Dashboard() {
   const { t } = useI18n();
-  const { isLoaded, isSignedIn } = useUser();
+  const { user, loading: authLoading } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (authLoading || !user) return;
     const loadStats = async () => {
       try {
         setLoading(true);
@@ -56,7 +56,7 @@ export default function Dashboard() {
       }
     };
     loadStats();
-  }, [isLoaded, isSignedIn]);
+  }, [user, authLoading]);
 
   if (loading) {
     return (

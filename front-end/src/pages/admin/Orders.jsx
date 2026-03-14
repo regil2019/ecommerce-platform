@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   File,
   Search,
@@ -72,7 +72,7 @@ const getStatusVariant = (status) => {
 
 export default function AdminOrders() {
   const { t } = useI18n();
-  const { isLoaded, isSignedIn } = useUser();
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -108,9 +108,9 @@ export default function AdminOrders() {
   }, [pagination.page, pagination.limit, searchTerm, statusFilter]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!user) return;
     loadOrders();
-  }, [loadOrders, isLoaded, isSignedIn]);
+  }, [loadOrders, user]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {

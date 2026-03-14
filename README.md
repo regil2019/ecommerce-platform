@@ -2,39 +2,39 @@
 
 ## 📋 About the Project
 
-A full-featured e-commerce application built with **React + Node.js + MySQL (TiDB Cloud)**, deployed to production across **Vercel** (frontend), **Koyeb** (backend), and **TiDB Cloud** (database). Includes authentication, payments, image uploads, email notifications, AI-powered recommendations, and a full admin dashboard.
+A full-featured e-commerce application built with **React + Node.js + MySQL**, deployed to production across **Vercel** (frontend), **Koyeb** (backend), and **TiDB Cloud** (database). Includes JWT authentication, payments, image uploads, email notifications, AI-powered recommendations, and a complete admin dashboard.
 
 ## 🌐 Live Deployment
 
-| Layer    | Platform      | Description                        |
-|----------|---------------|------------------------------------|
-| Frontend | **Vercel**    | React SPA with automatic CI/CD     |
-| Backend  | **Koyeb**     | Node.js REST API (auto-deploy)     |
-| Database | **TiDB Cloud**| MySQL-compatible serverless DB     |
+| Layer    | Platform       | Description                    |
+|----------|----------------|--------------------------------|
+| Frontend | **Vercel**     | React SPA with automatic CI/CD |
+| Backend  | **Koyeb**      | Node.js REST API (auto-deploy) |
+| Database | **TiDB Cloud** | MySQL-compatible serverless DB |
+
+---
 
 ## ✨ Features
 
 ### 🎨 Frontend
-- **React 18** with modern hooks and Vite
+- **React 18** + **Vite** — fast SPA with modern hooks
 - **Tailwind CSS v4** + **shadcn/ui** + **Radix UI** component system
-- **React Router v7** for SPA navigation
-- **Clerk** for authentication (sign-up, sign-in, OAuth)
-- **Context API** for global state management
+- **React Router v7** for client-side navigation
+- **Custom JWT Auth** — login, register, profile, password reset
+- **Context API** for global state (auth, cart)
 - **React Hook Form** + **Zod** for forms and validation
 - **Stripe.js** for payment UI
-- **Framer Motion** for animations
-- **Recharts / Chart.js** for analytics dashboards
+- **Framer Motion** + **Magic UI** for animations
+- **Recharts** for analytics dashboards
 - **Cloudinary** for image delivery
-- **EmailJS** for client-side email (order confirmations, password reset)
-- **i18n** internationalization support
-- **PWA Ready** with service workers
+- **EmailJS** for transactional emails
+- **i18n** internationalization (PT/EN)
 - **Responsive Design** — mobile-first
 
 ### 🔧 Backend
 - **Node.js + Express** REST API (ESM modules)
-- **Sequelize ORM** with **MySQL2** (TiDB Cloud)
-- **Clerk SDK** for server-side authentication verification
-- **JWT** with refresh tokens (fallback / session layer)
+- **Sequelize ORM** with **MySQL2** (TiDB Cloud compatible)
+- **JWT Authentication** — custom implementation with `jsonwebtoken` + `bcrypt`
 - **Rate Limiting** (`express-rate-limit`) and security (`helmet`, CORS)
 - **File Upload** via **Cloudinary** (multer-storage-cloudinary)
 - **Email Service** via **EmailJS**
@@ -43,90 +43,75 @@ A full-featured e-commerce application built with **React + Node.js + MySQL (TiD
 - **DeepSeek AI** for product recommendations
 - **Swagger / OpenAPI** docs at `/api/docs`
 - **Health Checks** at `/api/health`
-- **Structured logging** via **Winston** + **express-winston**
+- **Structured logging** via **Winston**
 
 ### 🚀 DevOps & Deploy
-- **Vercel** — automatic frontend deployments from `main` branch
-- **Koyeb** — automatic backend deployments from `main` branch
+- **Vercel** — automatic frontend deployments from `main`
+- **Koyeb** — automatic backend deployments from `main`
 - **TiDB Cloud** — serverless MySQL-compatible database
-- **Docker** multi-stage builds (local dev & self-hosted option)
-- **Docker Compose** for local orchestration
-- **GitHub Actions** CI/CD pipeline
-- **Nginx** reverse proxy with SSL (local/self-hosted)
-- **Non-root containers** for security
+- **Docker** multi-stage builds with **non-root containers**
+- **Docker Compose** — single command to run entire stack locally
+- **Nginx** reverse proxy with dynamic DNS resolution
+- **GitHub Actions** CI/CD pipeline with security scanning
 
 ---
 
-## ⚡ Quick Start (Local Development)
+## ⚡ Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- pnpm
-- Docker & Docker Compose (optional)
-- A TiDB Cloud (or local MySQL 8.0+) instance
-- Redis 7+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (recommended)
+- Or: Node.js 20+ + pnpm + MySQL 8+ + Redis 7+
 
-### 1. Clone & Install
+### Option A — Docker (Recommended)
 ```bash
 git clone https://github.com/your-username/ecommerce.git
 cd ecommerce
 
+# Copy and configure environment variables
+cp .env.example backend/.env
+# Edit backend/.env with your values (JWT_SECRET, Cloudinary, Stripe, etc.)
+
+# Start everything with one command
+docker compose up -d
+```
+
+✅ All 4 services start automatically: **MySQL · Redis · Backend · Frontend**
+
+| Service     | URL                            |
+|-------------|--------------------------------|
+| Frontend    | http://localhost:3000          |
+| Backend API | http://localhost:4000          |
+| Admin Panel | http://localhost:3000/admin    |
+| API Docs    | http://localhost:4000/api/docs |
+
+### Option B — Local Development (without Docker)
+```bash
 # Backend
-cd backend && pnpm install
+cd backend && pnpm install && pnpm run dev
 
-# Frontend
-cd ../front-end && pnpm install
+# Frontend (new terminal)
+cd front-end && pnpm install && pnpm run dev
 ```
-
-### 2. Configure Environment
-```bash
-cp .env.example .env
-# Fill in your values — see "Environment Variables" section below
-```
-
-### 3. Run with Docker (Recommended)
-```bash
-# Start all services
-docker-compose up -d
-```
-
-### 4. Run without Docker
-```bash
-# Terminal 1 — Backend
-cd backend && pnpm run dev
-
-# Terminal 2 — Frontend
-cd front-end && pnpm run dev
-```
-
-### 5. Access the Application
-| Service      | URL                            |
-|--------------|--------------------------------|
-| Frontend     | http://localhost:3000          |
-| Backend API  | http://localhost:4000          |
-| Admin Panel  | http://localhost:3000/admin    |
-| API Docs     | http://localhost:4000/api/docs |
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌────────────────────┐    ┌───────────────────────┐    ┌──────────────────────┐
-│   Frontend         │    │      Backend           │    │     Database          │
-│   (React + Vite)   │◄──►│  (Node.js + Express)  │◄──►│  (TiDB Cloud / MySQL) │
-│   Vercel           │    │  Koyeb                 │    │  Port: 4000 → TiDB    │
-└────────────────────┘    └───────────────────────┘    └──────────────────────┘
-          │                          │
-          │               ┌──────────────────┐
-          │               │     Redis        │
-          └───────────────│  (Cache/Session) │
-                          │  Port: 6379      │
-                          └──────────────────┘
+┌─────────────────────┐    ┌────────────────────────┐    ┌───────────────────────┐
+│   Frontend          │    │       Backend           │    │      Database         │
+│  React + Vite       │◄──►│  Node.js + Express      │◄──►│  TiDB Cloud / MySQL   │
+│  Vercel / nginx     │    │  Koyeb / Docker         │    │  Port 3306            │
+└─────────────────────┘    └────────────────────────┘    └───────────────────────┘
+                                        │
+                            ┌───────────────────────┐
+                            │        Redis          │
+                            │  Cache / Rate Limit   │
+                            │  Port 6379            │
+                            └───────────────────────┘
 ```
 
 **External Services:**
-- **Clerk** — Authentication (OAuth, JWT, social logins)
 - **Cloudinary** — Image storage & CDN delivery
 - **Stripe** — Payment processing & webhooks
 - **EmailJS** — Transactional emails
@@ -137,68 +122,60 @@ cd front-end && pnpm run dev
 ## ✅ Functionality
 
 ### 👥 Users
-- [x] Registration and authentication (Clerk)
+- [x] Registration and login (JWT — custom implementation)
 - [x] User profile management
+- [x] Password recovery via email token
 - [x] Order history
-- [x] Shopping cart
+- [x] Shopping cart (persistent)
 - [x] Favorites / wishlist
-- [x] Password recovery
 
 ### 🛍️ Products
-- [x] Product catalog with pagination
-- [x] Search and filters
-- [x] Product details
+- [x] Product catalog with pagination and filters
+- [x] Product detail pages
 - [x] Image uploads via Cloudinary
 - [x] Reviews and ratings
 - [x] AI-powered recommendations (DeepSeek)
 
 ### 📦 Orders
-- [x] Order management
-- [x] Order tracking
+- [x] Order creation and management
+- [x] Order status tracking
 - [x] Email notifications (EmailJS)
 - [x] Order cancellation
-- [x] Shipping calculation
-- [ ] Multiple payment methods
 
-### 👨‍💼 Admin
-- [x] Dashboard with metrics and charts
-- [x] Product management (CRUD)
+### 👨‍💼 Admin Dashboard
+- [x] Metrics and charts (Recharts)
+- [x] Product CRUD + image management
 - [x] Category management
-- [x] Order management
+- [x] Order management & status updates
 - [x] User management
-- [x] Image upload (Cloudinary)
 
 ### 💳 Payments
-- [x] Stripe integration
-- [x] Credit/Debit card (via Stripe)
+- [x] Stripe integration (card payments)
 - [x] Stripe Webhooks
-- [ ] Automatic refunds
 
 ---
 
 ## 🔐 Environment Variables
 
-All variables are documented in `.env.example`. Below are the **required** ones for production:
+Copy `.env.example` to `backend/.env` and fill in your values.
+
+**Required for production:**
 
 | Variable | Description |
 |---|---|
-| `NODE_ENV` | `production` |
-| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | TiDB Cloud credentials |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis connection |
-| `JWT_SECRET` | JWT signing secret |
-| `CLERK_SECRET_KEY` | Clerk backend SDK key |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk frontend key |
-| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Cloudinary credentials |
+| `JWT_SECRET` | Strong random secret for JWT signing |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Database credentials |
+| `REDIS_HOST` / `REDIS_PORT` | Redis connection |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Cloudinary |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Stripe keys |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe public key |
-| `EMAILJS_SERVICE_ID` / `EMAILJS_PUBLIC_KEY` / `EMAILJS_PRIVATE_KEY` | EmailJS config |
+| `EMAILJS_SERVICE_ID` / `EMAILJS_PUBLIC_KEY` | EmailJS config |
 | `DEEPSEEK_API_KEY` | DeepSeek AI API key |
-| `VITE_API_URL` | Full URL of the backend API (Koyeb URL) |
-| `FRONTEND_URL` / `CORS_ORIGIN` | Vercel frontend URL |
+| `FRONTEND_URL` / `CORS_ORIGIN` | Frontend URL (for CORS) |
+| `VITE_API_URL` | Backend API URL (used by frontend build) |
 
 ---
 
-## 🗃️ Database Migrations
+## 🗃️ Database
 
 ```bash
 cd backend
@@ -209,27 +186,21 @@ pnpm run migrate:latest
 # Rollback last migration
 pnpm run migrate:rollback
 
-# Seed database
+# Seed database with sample data
 pnpm run migrate:seed
-
-# Create admin user
-pnpm run create-admin
 ```
 
 ---
 
-## 📦 Available Scripts
+## 📦 Scripts
 
 ### Backend
 ```bash
-pnpm run dev          # Development with hot reload (nodemon)
+pnpm run dev          # Development with hot reload
 pnpm run start        # Production
-pnpm run test         # Run Jest test suite
-pnpm run lint         # ESLint check
-pnpm run lint:fix     # ESLint auto-fix
+pnpm run test         # Jest test suite
+pnpm run lint         # ESLint
 pnpm run migrate:latest   # Run DB migrations
-pnpm run migrate:rollback # Rollback DB migrations
-pnpm run migrate:seed     # Seed database
 pnpm run create-admin     # Create admin user
 ```
 
@@ -237,60 +208,32 @@ pnpm run create-admin     # Create admin user
 ```bash
 pnpm run dev          # Development (Vite)
 pnpm run build        # Production build
-pnpm run preview      # Preview production build
-pnpm run lint         # ESLint check
-pnpm run lint:fix     # ESLint auto-fix
+pnpm run lint         # ESLint
 ```
 
 ---
 
-## 🐳 Docker Commands (Local / Self-Hosted)
+## 🐳 Docker Commands
 
 ```bash
-# Start all services (development)
-docker-compose up -d
+# Start all services
+docker compose up -d
 
-# Real-time logs
-docker-compose logs -f
+# View real-time logs
+docker compose logs -f
 
-# Rebuild a specific service
-docker-compose up -d --build backend
+# Rebuild a specific service after code changes
+docker compose up -d --build backend
 
 # Stop all services
-docker-compose down
+docker compose down
 
-# Stop and remove volumes
-docker-compose down -v
+# Stop and remove volumes (resets database)
+docker compose down -v
 
 # Production (self-hosted)
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
-
----
-
-## 📊 Monitoring & Health Checks
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/health` | Backend health status |
-| `GET /api/docs` | Swagger API documentation |
-
-### Logs
-```bash
-# Service logs
-docker-compose logs backend
-
-# Real-time logs
-docker-compose logs -f --tail=100
-```
-
----
-
-## 📚 API Documentation
-
-Interactive Swagger docs are available at:
-- **Local:** http://localhost:4000/api/docs
-- **Production:** `https://<your-koyeb-url>/api/docs`
 
 ---
 
@@ -298,16 +241,16 @@ Interactive Swagger docs are available at:
 
 | Feature | Status |
 |---|---|
-| Clerk authentication | ✅ |
-| JWT with refresh tokens | ✅ |
-| Rate limiting | ✅ |
+| Custom JWT authentication | ✅ |
+| Password hashing (bcrypt, cost 12) | ✅ |
+| Rate limiting (express-rate-limit) | ✅ |
 | CORS configured | ✅ |
 | Helmet.js security headers | ✅ |
 | Input validation (express-validator + Zod) | ✅ |
 | SQL injection protection (Sequelize ORM) | ✅ |
-| XSS protection | ✅ |
 | Non-root Docker containers | ✅ |
 | Stripe webhook signature verification | ✅ |
+| Trivy vulnerability scanning (CI/CD) | ✅ |
 
 ---
 
@@ -315,7 +258,7 @@ Interactive Swagger docs are available at:
 
 ### Frontend → Vercel
 1. Connect the `front-end/` directory to Vercel
-2. Set all `VITE_*` environment variables in the Vercel dashboard
+2. Set `VITE_API_URL` and other `VITE_*` environment variables
 3. Deployments trigger automatically on push to `main`
 
 ### Backend → Koyeb
@@ -325,16 +268,17 @@ Interactive Swagger docs are available at:
 
 ### Database → TiDB Cloud
 1. Create a **Serverless** cluster on [TiDB Cloud](https://tidbcloud.com)
-2. Copy the connection string and set `DB_*` variables accordingly
+2. Set `DB_*` variables with the connection details
 3. Run migrations: `pnpm run migrate:latest`
 
-### GitHub Actions (CI/CD)
-The automated pipeline includes:
-- ✅ Code quality checks
-- ✅ Automated testing
-- ✅ Docker image building
-- ✅ Deployment notifications
-- [ ] Security scanning (Trivy — planned)
+### CI/CD Pipeline (GitHub Actions)
+On every push to `main` or `develop`:
+- ✅ Code quality checks (ESLint)
+- ✅ Backend test suite (Jest)
+- ✅ Frontend production build validation
+- ✅ Security scanning (Trivy + pnpm audit)
+- ✅ Docker image build & push to GHCR
+- ✅ Automatic deployment
 
 ---
 
@@ -342,35 +286,22 @@ The automated pipeline includes:
 
 1. Fork the project
 2. Create a branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -m 'feat: add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
+3. Commit (`git commit -m 'feat: add new feature'`)
+4. Push (`git push origin feature/new-feature`)
 5. Open a Pull Request
 
 ---
 
-## 📞 Support
+## 📞 Contact
 
-- 📧 Email: danielnunda@gmail.com
+- 📧 danielnunda@gmail.com
 
 ---
 
 ## 🙏 Acknowledgements
 
-- [React](https://reactjs.org/)
-- [Node.js](https://nodejs.org/)
-- [Express](https://expressjs.com/)
-- [Sequelize](https://sequelize.org/)
-- [TiDB Cloud](https://tidbcloud.com/)
-- [Vercel](https://vercel.com/)
-- [Koyeb](https://www.koyeb.com/)
-- [Clerk](https://clerk.com/)
-- [Cloudinary](https://cloudinary.com/)
-- [Stripe](https://stripe.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Magic/ui](https://magicui.design)
-- [Docker](https://www.docker.com/)
+[React](https://reactjs.org/) · [Node.js](https://nodejs.org/) · [Express](https://expressjs.com/) · [Sequelize](https://sequelize.org/) · [TiDB Cloud](https://tidbcloud.com/) · [Vercel](https://vercel.com/) · [Koyeb](https://www.koyeb.com/) · [Cloudinary](https://cloudinary.com/) · [Stripe](https://stripe.com/) · [Tailwind CSS](https://tailwindcss.com/) · [shadcn/ui](https://ui.shadcn.com/) · [Docker](https://www.docker.com/)
 
 ---
 
-**🌐 Vercel Frontend | ⚡ Koyeb Backend | 🗄️ TiDB Cloud Database | 🔐 Clerk Auth | 💳 Stripe Payments**
+**🌐 Vercel Frontend · ⚡ Koyeb Backend · 🗄️ TiDB Cloud · 🔐 JWT Auth · 💳 Stripe Payments**

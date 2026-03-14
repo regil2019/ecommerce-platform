@@ -8,11 +8,7 @@ const User = db.define('User', {
     primaryKey: true,
     autoIncrement: true
   },
-  clerkId: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: true // Changed to true to allow migration of legacy users
-  },
+  // clerkId removido — autenticação migrada para JWT
   name: {
     type: DataTypes.STRING(100),
     allowNull: false,
@@ -78,10 +74,6 @@ const User = db.define('User', {
     {
       unique: true,
       fields: ['email']
-    },
-    {
-      unique: true,
-      fields: ['clerk_id']
     },
     {
       fields: ['role']

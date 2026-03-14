@@ -1,16 +1,5 @@
 # =============================================================================
 # docker-compose.override.yml
-# Este ficheiro é usado automaticamente quando corres: docker compose up database redis -d
-# Permite correr APENAS a base de dados (MySQL + Redis) via Docker,
-# enquanto o backend e frontend correm localmente com pnpm.
+# Este ficheiro é carregado automaticamente com o docker-compose.yml.
+# Override vazio — todos os serviços iniciam com: docker compose up -d
 # =============================================================================
-
-services:
-  # Desabilita os serviços de aplicação neste override (apenas infra)
-  backend:
-    profiles:
-      - app
-
-  frontend:
-    profiles:
-      - app

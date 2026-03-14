@@ -62,7 +62,6 @@
     "supertest": "^7.1.0"
   },
   "jest": {
-    "preset": "default",
     "extensionsToTreatAsEsm": [
       ".js"
     ],

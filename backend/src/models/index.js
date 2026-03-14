@@ -26,8 +26,8 @@ Product.hasMany(Favorite, { foreignKey: 'product_id', as: 'favorites', onDelete:
 Favorite.belongsTo(Product, { foreignKey: 'product_id', as: 'product' })
 
 // Order associations
-User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' })
-Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' })
+User.hasMany(Order, { foreignKey: 'user_id', as: 'orders', onDelete: 'SET NULL' })
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'user', onDelete: 'SET NULL' })
 Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'orderItems', onDelete: 'CASCADE' })
 OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' })
 Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'orderItems', onDelete: 'RESTRICT' }) // Prevent deleting products with orders

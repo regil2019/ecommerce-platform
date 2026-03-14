@@ -17,7 +17,7 @@ import swaggerUi from 'swagger-ui-express';
 import expressWinston from 'express-winston';
 
 /* Routes */
-// Auth routes removed - Clerk handles auth + Middleware
+import authRoutes from "./src/routes/authRoutes.js";
 import productRoutes from "./src/routes/productRoutes.js";
 import cartRoutes from "./src/routes/cartRoutes.js";
 import orderRoutes from "./src/routes/orderRoutes.js";
@@ -157,6 +157,7 @@ app.use('/api/', apiLimiter);
 /* =========================
    Routes
 ========================= */
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
@@ -224,10 +225,11 @@ const startServer = async () => {
     await db.authenticate();
     console.log("✔ Database connected");
 
-    // Only sync in local dev
+    // sync() sem alter: cria tabelas que não existam, não modifica as existentes.
+    // Alterações de schema devem ser geridas via migrações Sequelize (pnpm sequelize db:migrate)
     if (process.env.NODE_ENV !== "production" && !process.env.DATABASE_URL) {
-      await db.sync({ alter: true });
-      console.log("✔ Models synced (alter: true)");
+      await db.sync();
+      console.log("✔ Models synced");
     }
 
     app.listen(PORT, "0.0.0.0", () => {
