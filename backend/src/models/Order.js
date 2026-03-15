@@ -48,3 +48,4 @@ const Order = db.define('Order', {
 // Association defined in models/index.js with alias 'orderItems'
 
 export default Order
+// Fix for Koyeb deployment

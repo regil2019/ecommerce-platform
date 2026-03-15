@@ -104,3 +104,4 @@ const Category = db.define('Category', {
 // })
 
 export default Category
+// Fix for Koyeb deployment
