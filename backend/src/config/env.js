@@ -14,11 +14,17 @@ const validateEnv = () => {
     // Security
     JWT_SECRET: (val) => val && val.length >= 32,
 
-    // Database
-    DB_HOST: (val) => !!val,
-    DB_USER: (val) => !!val,
-    DB_PASSWORD: (val) => val !== undefined,
-    DB_NAME: (val) => !!val,
+    // Database (Aceita DATABASE_URL ou as variáveis individuais)
+    DB_CONNECTION: () => {
+      const hasUrl = !!process.env.DATABASE_URL;
+      const hasIndividual = !!(
+        process.env.DB_HOST &&
+        process.env.DB_USER &&
+        process.env.DB_PASSWORD !== undefined &&
+        process.env.DB_NAME
+      );
+      return hasUrl || hasIndividual;
+    },
 
     // Services
     CLOUDINARY_CLOUD_NAME: (val) => !!val,
