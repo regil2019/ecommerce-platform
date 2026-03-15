@@ -68,24 +68,24 @@ const Category = db.define('Category', {
       return `${baseUrl}${rawValue.startsWith('/') ? '' : '/'}${rawValue}`;
     }
   },
-  parentId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'categories',
-      key: 'id'
-    }
-  },
-  isActive: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
-    allowNull: false
-  },
-  productCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
-    allowNull: false
-  }
+//   parentId: {
+//     type: DataTypes.INTEGER,
+//     allowNull: true,
+//     references: {
+//       model: 'categories',
+//       key: 'id'
+//     }
+//   },
+//   isActive: {
+//     type: DataTypes.BOOLEAN,
+//     defaultValue: true,
+//     allowNull: false
+//   },
+//   productCount: {
+//     type: DataTypes.INTEGER,
+//     defaultValue: 0,
+//     allowNull: false
+//   }
 }, {
   tableName: 'categories',
   timestamps: true,
@@ -93,14 +93,14 @@ const Category = db.define('Category', {
 })
 
 // Self-referencing relationship for parent-child categories
-Category.hasMany(Category, {
-  foreignKey: 'parentId',
-  as: 'subcategories'
-})
+// Category.hasMany(Category, {
+//   foreignKey: 'parentId',
+//   as: 'subcategories'
+// })
 
-Category.belongsTo(Category, {
-  foreignKey: 'parentId',
-  as: 'parent'
-})
+// Category.belongsTo(Category, {
+//   foreignKey: 'parentId',
+//   as: 'parent'
+// })
 
 export default Category

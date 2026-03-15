@@ -32,14 +32,14 @@ const Order = db.define('Order', {
     type: DataTypes.ENUM('standard', 'express'),
     allowNull: true
   },
-  promoCode: {
-    type: DataTypes.STRING(50),
-    allowNull: true
-  },
-  discountAmount: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0
-  }
+//   promoCode: {
+//     type: DataTypes.STRING(50),
+//     allowNull: true
+//   },
+//   discountAmount: {
+//     type: DataTypes.DECIMAL(10, 2),
+//     defaultValue: 0
+//   }
 }, {
   underscored: true
 })
