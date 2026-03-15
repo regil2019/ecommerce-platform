@@ -55,7 +55,7 @@ const categoryValidations = [
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
-      attributes: ['id', 'name', 'slug', 'description', 'isActive', 'image'],
+      attributes: ['id', 'name', 'slug', 'description', 'image'],
       order: [['name', 'ASC']]
     })
     res.json(categories)
@@ -73,7 +73,7 @@ router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidati
       return res.status(422).json({ errors: errors.array() })
     }
 
-    const { name, slug, description, isActive } = req.body
+    const { name, slug, description } = req.body
 
     // Check if category exists
     const existingCategory = await Category.findOne({ where: { name: name.trim() } })
@@ -99,7 +99,6 @@ router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidati
       name: name.trim(),
       slug: finalSlug,
       description: description || '',
-      isActive: isActive === 'true' || isActive === true,
       image: imageUrl
     })
 
@@ -119,7 +118,7 @@ router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValida
       return res.status(422).json({ errors: errors.array() })
     }
 
-    const { name, slug, description, isActive } = req.body
+    const { name, slug, description } = req.body
     const category = await Category.findByPk(id)
 
     if (!category) {
@@ -130,7 +129,6 @@ router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValida
     category.name = name.trim()
     category.slug = slug || generateSlug(name)
     category.description = description || ''
-    category.isActive = isActive === 'true' || isActive === true
 
     if (req.file) {
       category.image = `/uploads/${req.file.filename}`
