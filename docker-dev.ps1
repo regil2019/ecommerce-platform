@@ -48,7 +48,7 @@ function Start-All {
     docker compose -f "$ProjectRoot\docker-compose.yml" --profile app up -d
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✅ Todos os serviços a correr:" -ForegroundColor Green
-        Write-Host "   Backend   → http://localhost:4000" -ForegroundColor White
+        Write-Host "   Backend   → ${env:BACKEND_URL:-http://localhost:4000}" -ForegroundColor White
         Write-Host "   Frontend  → http://localhost:3000" -ForegroundColor White
         Write-Host "   MySQL     → localhost:3306" -ForegroundColor White
         Write-Host "   Redis     → localhost:6379" -ForegroundColor White

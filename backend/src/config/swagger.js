@@ -18,12 +18,8 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:4000',
-        description: 'Development server'
-      },
-      {
-        url: 'https://api.ecommerce.com',
-        description: 'Production server'
+        url: process.env.BASE_URL || 'http://localhost:4000',
+        description: 'Current server'
       }
     ],
     components: {

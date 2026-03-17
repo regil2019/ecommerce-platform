@@ -41,7 +41,7 @@ cmd_up() {
     check_docker
     docker compose -f "$COMPOSE_FILE" --profile app up -d
     success "Todos os serviços a correr:"
-    echo "   Backend   → http://localhost:4000"
+    echo "   Backend   → ${VITE_API_URL:-http://localhost:4000}"
     echo "   Frontend  → http://localhost:3000"
     echo "   MySQL     → localhost:3306"
     echo "   Redis     → localhost:6379"

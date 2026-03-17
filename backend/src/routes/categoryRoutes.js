@@ -9,22 +9,18 @@ import path from 'path'
 import crypto from 'crypto'
 import fs from 'fs'
 
+import { CloudinaryStorage } from 'multer-storage-cloudinary'
+import cloudinary from '../config/cloudinary.js'
+
 const router = express.Router()
 
-// Ensure upload directory exists
-const uploadDir = 'uploads'
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
-
-// Configure local disk storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir)
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname)}`
-    cb(null, uniqueName)
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'ecommerce_categories',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif'],
+    transformation: [{ width: 500, height: 500, crop: 'limit' }]
   }
 })
 
@@ -90,7 +86,7 @@ router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidati
     // Handle image
     let imageUrl = null
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`
+      imageUrl = req.file.path // Cloudinary secure_url
     } else if (req.body.image) {
       imageUrl = req.body.image // Allow image URL string
     }
@@ -131,7 +127,7 @@ router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValida
     category.description = description || ''
 
     if (req.file) {
-      category.image = `/uploads/${req.file.filename}`
+      category.image = req.file.path // Cloudinary secure_url
     } else if (req.body.image !== undefined) {
       category.image = req.body.image // Update if provided string, or clear if empty string
     }

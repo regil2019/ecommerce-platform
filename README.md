@@ -77,8 +77,6 @@ docker compose up -d
 
 ✅ All 4 services start automatically: **MySQL · Redis · Backend · Frontend**
 
-| Service     | URL                            |
-|-------------|--------------------------------|
 | Frontend    | http://localhost:5173 (Vite)   |
 | Backend API | http://localhost:4000/api      |
 | Admin Panel | http://localhost:5173/admin    |
