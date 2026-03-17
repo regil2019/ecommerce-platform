@@ -50,7 +50,7 @@ export default function OrderHistory() {
       try {
         setLoading(true);
         const data = await fetchOrders();
-        setOrders(data.orders || []);
+        setOrders(data.data || []);
       } catch (err) {
         toast.error(t("common.errorLoad"));
       } finally {

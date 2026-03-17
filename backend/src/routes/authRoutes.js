@@ -4,10 +4,11 @@ import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import { authenticate } from '../middleware/authMiddleware.js'
+import { config } from '../config/env.js'
 
 const router = express.Router()
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production'
+const JWT_SECRET = config.jwtSecret
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 
 // Admin emails that get auto-promoted

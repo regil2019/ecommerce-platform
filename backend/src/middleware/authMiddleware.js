@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
+import { config } from '../config/env.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production'
+const JWT_SECRET = config.jwtSecret
 
 // Verify JWT token and attach decoded payload to req.user
 export const authenticate = (req, res, next) => {
