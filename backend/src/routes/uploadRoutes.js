@@ -108,7 +108,7 @@ router.post('/image', authenticate, (req, res, next) => {
         filename: req.file.filename || req.file.originalname
       })
     } catch (error) {
-    ...
+      console.error('Upload Error:', error);
       res.status(500).json({ error: 'Failed to process uploaded image' })
     }
   });
