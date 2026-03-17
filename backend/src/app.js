@@ -1,4 +1,4 @@
-import './src/config/env.js'
+import './config/env.js'
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -8,26 +8,26 @@ import rateLimit from "express-rate-limit";
 import expressWinston from 'express-winston';
 
 /* Middleware & Config */
-import { errorHandler } from "./src/middleware/errorHandler.js";
-import logger from './src/config/logger.js';
-import monitoringService from './src/services/monitoringService.js';
-import specs from './src/config/swagger.js';
+import { errorHandler } from "./middleware/errorHandler.js";
+import logger from './config/logger.js';
+import monitoringService from './services/monitoringService.js';
+import specs from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 
 /* Routes */
-import authRoutes from "./src/routes/authRoutes.js";
-import productRoutes from "./src/routes/productRoutes.js";
-import cartRoutes from "./src/routes/cartRoutes.js";
-import orderRoutes from "./src/routes/orderRoutes.js";
-import uploadRoutes from "./src/routes/uploadRoutes.js";
-import categoryRoutes from "./src/routes/categoryRoutes.js";
-import paymentRoutes from "./src/routes/paymentRoutes.js";
-import adminRoutes from "./src/routes/adminRoutes.js";
-import reviewRoutes from "./src/routes/reviewRoutes.js";
-import favoriteRoutes from "./src/routes/favoriteRoutes.js";
-import healthRoutes from "./src/routes/healthRoutes.js";
-import recommendationRoutes from "./src/routes/recommendationRoutes.js";
-import promotionRoutes from "./src/routes/promotionRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import favoriteRoutes from "./routes/favoriteRoutes.js";
+import healthRoutes from "./routes/healthRoutes.js";
+import recommendationRoutes from "./routes/recommendationRoutes.js";
+import promotionRoutes from "./routes/promotionRoutes.js";
 
 dotenv.config();
 
