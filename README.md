@@ -79,9 +79,9 @@ docker compose up -d
 
 | Service     | URL                            |
 |-------------|--------------------------------|
-| Frontend    | http://localhost:3000          |
-| Backend API | http://localhost:4000          |
-| Admin Panel | http://localhost:3000/admin    |
+| Frontend    | http://localhost:5173 (Vite)   |
+| Backend API | http://localhost:4000/api      |
+| Admin Panel | http://localhost:5173/admin    |
 | API Docs    | http://localhost:4000/api/docs |
 
 ### Option B — Local Development (without Docker)

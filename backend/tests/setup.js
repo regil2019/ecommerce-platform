@@ -7,22 +7,46 @@ import { Product, Category, Review, User, Favorite, Order, OrderItem, Cart } fro
 dotenv.config();
 
 // Setup test database
-const testDb = new Sequelize(
-  process.env.TEST_DB_NAME || 'ecommerce_test',
-  process.env.TEST_DB_USER || 'root',
-  process.env.TEST_DB_PASSWORD || '',
-  {
-    host: process.env.TEST_DB_HOST || 'localhost',
+let testDb;
+
+if (process.env.DATABASE_URL) {
+  // Se DATABASE_URL estiver presente, usar ela (comum em CI/CD)
+  const cleanUrl = process.env.DATABASE_URL.split('?')[0];
+  testDb = new Sequelize(cleanUrl, {
     dialect: 'mysql',
     logging: false,
+    dialectOptions: {
+      ssl: process.env.DATABASE_URL.includes('ssl=true') ? {
+        require: true,
+        rejectUnauthorized: false
+      } : null
+    },
     pool: {
       max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
     }
-  }
-);
+  });
+} else {
+  // Fallback para variáveis individuais (desenvolvimento local)
+  testDb = new Sequelize(
+    process.env.TEST_DB_NAME || 'ecommerce_test',
+    process.env.TEST_DB_USER || 'root',
+    process.env.TEST_DB_PASSWORD || '',
+    {
+      host: process.env.TEST_DB_HOST || 'localhost',
+      dialect: 'mysql',
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      }
+    }
+  );
+}
 
 global.testDb = testDb;
 

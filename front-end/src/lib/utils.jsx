@@ -41,18 +41,13 @@ export const truncateText = (text, maxLength = 80) => {
  */
 export const getImageUrl = (path) => {
   if (!path) return "https://placehold.co/600x600?text=No+Image";
-  if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("blob:")) return path;
-
-  let backendUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-  backendUrl = backendUrl.replace(/(\/api)?\/?$/, "");
-
-  // Fallback: se o backendUrl ficou vazio ou relativo (ex: /api), aponta pro servidor back-end local (porta 4000) usando o IP/host atual
-  if (!backendUrl || backendUrl.startsWith("/")) {
-    const currentHost = window.location.hostname;
-    const currentProtocol = window.location.protocol;
-    backendUrl = `${currentProtocol}//${currentHost}:4000`;
+  
+  // Se já for uma URL completa (Cloudinary), retorna ela mesma
+  if (path.startsWith("http") || path.startsWith("data:") || path.startsWith("blob:")) {
+    return path;
   }
 
-  const cleanPath = path.startsWith("/") ? path.substring(1) : path;
-  return `${backendUrl}/${cleanPath}`;
+  // Se for um caminho relativo antigo (ex: /uploads/...), ignoramos ou usamos placeholder
+  // Já que o plano é usar apenas URLs diretas do Cloudinary no banco
+  return "https://placehold.co/600x600?text=Invalid+Image+Path";
 };

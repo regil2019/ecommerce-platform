@@ -101,19 +101,14 @@ router.post('/image', authenticate, (req, res, next) => {
         return res.status(400).json({ error: 'No file uploaded' })
       }
 
-      let fileUrl;
-      if (hasCloudinary) {
-        fileUrl = req.file.path; // Cloudinary secure_url
-      } else {
-        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 4000}`;
-        fileUrl = `${baseUrl.replace(/\/$/, '')}/uploads/${req.file.filename}`;
-      }
-
+      let fileUrl = req.file.path; // Cloudinary secure_url or Full Path from multer
+      
       res.json({
         url: fileUrl,
         filename: req.file.filename || req.file.originalname
       })
     } catch (error) {
+    ...
       res.status(500).json({ error: 'Failed to process uploaded image' })
     }
   });
@@ -130,11 +125,7 @@ router.post('/:id', authenticate, (req, res, next) => {
         return res.status(400).json({ message: 'No files uploaded' })
       }
 
-      const imageUrls = files.map(file => {
-        if (hasCloudinary) return file.path;
-        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 4000}`;
-        return `${baseUrl.replace(/\/$/, '')}/uploads/${file.filename}`;
-      })
+      const imageUrls = files.map(file => file.path)
 
       res.json({
         message: 'Images uploaded successfully',

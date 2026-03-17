@@ -33,12 +33,8 @@ const Product = db.define('Product', {
       else if (typeof raw === 'string' && raw) {
         try { parsed = JSON.parse(raw); } catch (e) { parsed = []; }
       }
-      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-      return parsed.map(img => {
-        if (!img) return img;
-        if (img.startsWith('http')) return img;
-        return `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`;
-      })
+      // Return only absolute URLs (Cloudinary)
+      return parsed.filter(img => img && img.startsWith('http'));
     }
   },
   stock: {
@@ -91,10 +87,8 @@ const Product = db.define('Product', {
     allowNull: true,
     get() {
       const rawValue = this.getDataValue('main_image');
-      if (!rawValue) return rawValue;
-      if (rawValue.startsWith('http')) return rawValue;
-      const baseUrl = process.env.BASE_URL || 'http://localhost:4000';
-      return `${baseUrl}${rawValue.startsWith('/') ? '' : '/'}${rawValue}`;
+      if (!rawValue || !rawValue.startsWith('http')) return null;
+      return rawValue;
     }
   },
   sku: {
