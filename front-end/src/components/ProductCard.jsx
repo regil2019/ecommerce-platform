@@ -36,7 +36,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <MagicCard
-      className="group relative flex h-full flex-col overflow-hidden"
+      className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-border/50"
       spotlightColor="rgba(59, 130, 246, 0.1)" // Primary color spotlight
     >
       <Link
@@ -79,18 +79,18 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <h3 className="mb-1 flex-1 font-semibold leading-snug text-sm sm:text-base text-foreground line-clamp-2">
+      <div className="flex flex-1 flex-col p-2.5 sm:p-3.5">
+        <h3 className="mb-0.5 flex-1 font-semibold leading-tight text-xs sm:text-sm text-foreground line-clamp-2">
           {product.name}
         </h3>
-        <p className="mb-2 text-lg sm:text-2xl font-bold text-foreground">
+        <p className="mb-1.5 text-base sm:text-xl font-bold text-foreground">
           {formatCurrency(product.price)}
         </p>
 
         <RainbowButton
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className="relative z-20 mt-auto w-full h-9 sm:h-11 text-xs sm:text-sm"
+          className="relative z-20 mt-auto w-full h-8 sm:h-10 text-[10px] sm:text-xs"
           aria-label={t('product.addToCart')}
         >
           {isOutOfStock ? (

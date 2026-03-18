@@ -1,10 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Search, Sun, Moon, User, LogOut, Heart, LayoutDashboard, Package } from 'lucide-react';
-import useCart from '../hooks/useCart';
-import { useTheme } from '../hooks/useTheme';
-import { useAuth } from '../hooks/useAuth';
 import { useI18n } from '../i18n';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function NavBar({ searchTerm, setSearchTerm }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -64,7 +59,7 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
           </Link>
 
           {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <div className="hidden md:flex flex-1 max-w-[280px] mx-4 lg:mx-8">
             <form onSubmit={handleSearch} className="relative w-full group">
               <input
                 type="text"
@@ -78,7 +73,7 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             <Link to="/products" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
               {t('nav.products')}
             </Link>
@@ -168,14 +163,17 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
               </>
             )}
 
-            <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
-              <ShoppingCart size={24} />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-lg border-2 border-background animate-in zoom-in">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
+
+            <div className="flex items-center gap-2 border-l border-border/50 pl-4 ml-2">
+              <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
+                <ShoppingCart size={20} />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-lg border-2 border-background animate-in zoom-in">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -199,134 +197,156 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
         </div>
       </div>
 
-      {/* Mobile Menu Overlay & Drawer */}
-      {isMenuOpen && (
-        <>
-          {/* Backdrop Overlay */}
-          <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-300"
-            onClick={() => setIsMenuOpen(false)}
-            aria-hidden="true"
-          />
 
-          <div className="md:hidden absolute top-full left-0 right-0 z-50 bg-background border-b border-border shadow-2xl animate-in slide-in-from-top-5 duration-300 max-h-[85vh] overflow-y-auto">
-            <div className="px-6 py-8 space-y-6">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  placeholder={t('search_placeholder')}
-                  className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              </form>
+      {/* Mobile Menu Drawer */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+            />
 
-              <div className="flex flex-col gap-1">
-                <Link
-                  to="/products"
-                  className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground text-lg font-semibold transition-all flex items-center justify-between group"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('nav.products')}
-                  <Package className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </Link>
-
-                <Link
-                  to="/about"
-                  className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground text-lg font-semibold transition-all flex items-center justify-between group"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('nav.about')}
-                  <Search className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </Link>
-
-                <div className="h-px bg-border/50 my-4" />
-
-                {!user ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <Link
-                      to="/login"
-                      className="px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold text-center hover:bg-secondary transition-all"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {t('nav.login')}
-                    </Link>
-
-                    <Link
-                      to="/register"
-                      className="px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-center shadow-lg shadow-primary/25 active:scale-95 transition-all"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {t('nav.register')}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {user.role === 'admin' && (
-                      <Link
-                        to="/admin"
-                        className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-4"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <LayoutDashboard size={24} className="text-primary" />
-                        <span className="text-lg">Dashboard</span>
-                      </Link>
-                    )}
-
-                    <Link
-                      to="/favorites"
-                      className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-4"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Heart size={24} className="text-primary" />
-                      <span className="text-lg">{t('nav.favorites')}</span>
-                    </Link>
-
-                    <Link
-                      to="/orders"
-                      className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-4"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Package size={24} className="text-primary" />
-                      <span className="text-lg">{t('nav.orders')}</span>
-                    </Link>
-
-                    <Link
-                      to="/profile"
-                      className="px-4 py-4 rounded-xl hover:bg-secondary text-foreground font-medium transition-colors flex items-center gap-4"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <User size={24} className="text-primary" />
-                      <span className="text-lg">{t('nav.profile')}</span>
-                    </Link>
-
-                    <button
-                      onClick={() => { logout(); setIsMenuOpen(false); }}
-                      className="px-4 py-4 rounded-xl hover:bg-destructive/10 text-destructive font-bold transition-colors flex items-center gap-4 w-full text-left mt-4"
-                    >
-                      <LogOut size={24} />
-                      <span className="text-lg">{t('nav.logout')}</span>
-                    </button>
-                  </div>
-                )}
-
-                <div className="h-px bg-border/50 my-6" />
-
-                <div className="flex items-center justify-between px-4 py-4 bg-secondary/30 rounded-2xl">
-                  <span className="font-bold text-foreground">{t('theme.toggle')}</span>
+            {/* Side Drawer */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 z-[60] w-[280px] sm:w-[350px] bg-background border-l border-border shadow-2xl md:hidden overflow-y-auto"
+            >
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between p-4 border-b border-border/50">
+                  <span className="font-bold text-xl text-primary">Elevate</span>
                   <button
-                    onClick={toggleTheme}
-                    className="p-3 rounded-full bg-background text-foreground shadow-sm active:scale-90 transition-all"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-2 rounded-full hover:bg-secondary text-foreground"
                   >
-                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    <X size={24} />
                   </button>
                 </div>
+
+                <div className="p-6 space-y-8 flex-grow">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      placeholder={t('common.search')}
+                      className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-primary transition-all text-sm"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  </form>
+
+                  <nav className="flex flex-col gap-2">
+                    <Link
+                      to="/products"
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-semibold transition-all group"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Package size={22} className="text-muted-foreground group-hover:text-primary" />
+                      {t('nav.products')}
+                    </Link>
+
+                    <Link
+                      to="/about"
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-semibold transition-all group"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Search size={22} className="text-muted-foreground group-hover:text-primary" />
+                      {t('nav.about')}
+                    </Link>
+
+                    <div className="h-px bg-border/50 my-2" />
+
+                    {!user ? (
+                      <div className="space-y-3 pt-2">
+                        <Link
+                          to="/login"
+                          className="flex items-center justify-center w-full px-4 py-3 rounded-xl border-2 border-border text-foreground font-bold hover:bg-secondary transition-all"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {t('nav.login')}
+                        </Link>
+                        <Link
+                          to="/register"
+                          className="flex items-center justify-center w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/25"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {t('nav.register')}
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        {user.role === 'admin' && (
+                          <Link
+                            to="/admin"
+                            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-all"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <LayoutDashboard size={22} className="text-primary" />
+                            Dashboard
+                          </Link>
+                        )}
+                        <Link
+                          to="/favorites"
+                          className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-all"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <Heart size={22} className="text-primary" />
+                          {t('nav.favorites')}
+                        </Link>
+                        <Link
+                          to="/orders"
+                          className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-all"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <Package size={22} className="text-primary" />
+                          {t('nav.orders')}
+                        </Link>
+                        <Link
+                          to="/profile"
+                          className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-medium transition-all"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <User size={22} className="text-primary" />
+                          {t('nav.profile')}
+                        </Link>
+                      </>
+                    )}
+                  </nav>
+                </div>
+
+                <div className="p-6 bg-secondary/20 border-t border-border/50">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="font-semibold text-sm">{t('theme.toggle')}</span>
+                    <button
+                      onClick={toggleTheme}
+                      className="p-2.5 rounded-full bg-background border border-border text-foreground shadow-sm active:scale-95 transition-all"
+                    >
+                      {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                  </div>
+
+                  {user && (
+                    <button
+                      onClick={() => { logout(); setIsMenuOpen(false); }}
+                      className="flex items-center gap-4 w-full px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive font-bold transition-all"
+                    >
+                      <LogOut size={22} />
+                      {t('nav.logout')}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
