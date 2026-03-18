@@ -37,26 +37,41 @@ const app = express();
    ✅ CORS Configuration
 ========================= */
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
+  process.env.FRONTEND_URL,
   "http://localhost:3000",
   "http://localhost:5173",
-];
+  "https://ecommerce-platform-drab.vercel.app"
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      if (origin.endsWith(".vercel.app")) {
+
+      // Check if origin is a Vercel deployment
+      const isVercel = /\.vercel\.app$/.test(origin);
+      const isAllowed = allowedOrigins.includes(origin);
+
+      if (isVercel || isAllowed) {
         return callback(null, true);
       }
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+
+      console.warn(`CORS blocked for origin: ${origin}`);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "x-requested-with"],
+    allowedHeaders: [
+      "Content-Type", 
+      "Authorization", 
+      "Cache-Control", 
+      "Pragma", 
+      "Expires", 
+      "X-Requested-With",
+      "sentry-trace",
+      "baggage"
+    ],
   })
 );
 
