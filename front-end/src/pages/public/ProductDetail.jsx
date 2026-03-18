@@ -158,7 +158,7 @@ export default function ProductDetail() {
         <div className="space-y-8">
           <div>
             <div className="mb-4 flex items-start justify-between">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">{product.name}</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">{product.name}</h1>
               <FavoriteButton
                 productId={product.id}
                 size="w-10 h-10"
@@ -186,7 +186,7 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="inline-block rounded-lg bg-primary/5 px-4 py-2">
-              <span className="text-4xl font-bold text-primary tracking-tight">
+              <span className="text-2xl sm:text-4xl font-bold text-primary tracking-tight">
                 {formatCurrency(product.price)}
               </span>
             </div>
@@ -195,7 +195,7 @@ export default function ProductDetail() {
 
           {/* Description */}
           <div className="prose prose-neutral dark:prose-invert max-w-none">
-            <p className="leading-relaxed text-muted-foreground text-lg">{product.description}</p>
+            <p className="leading-relaxed text-muted-foreground text-base sm:text-lg">{product.description}</p>
           </div>
 
           {/* Quantity & Buttons */}

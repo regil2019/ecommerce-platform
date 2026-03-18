@@ -15,21 +15,24 @@ export default function SecCategories({ onSelectCategory }) {
   }, []);
 
   return (
-    <div className="mb-8 p-4 bg-gray-100 rounded">
-      <h3 className="text-xl font-semibold mb-4">Categorias</h3>
-      <div className="flex space-x-4 flex-wrap">
+    <div className="mb-10 p-6 bg-card border border-border/50 rounded-2xl shadow-sm backdrop-blur-sm">
+      <h3 className="text-xl font-bold mb-6 text-foreground flex items-center gap-2">
+         <span className="w-1.5 h-6 bg-primary rounded-full" />
+         Categorias
+      </h3>
+      <div className="flex gap-3 flex-wrap">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => onSelectCategory(category.name)}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-5 py-2.5 bg-secondary/50 border-2 border-transparent text-muted-foreground rounded-xl text-sm font-semibold hover:bg-secondary hover:text-foreground transition-all duration-300"
           >
             {category.name}
           </button>
         ))}
         <button
           onClick={() => onSelectCategory(null)}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          className="px-5 py-2.5 bg-transparent border-2 border-border text-muted-foreground rounded-xl text-sm font-semibold hover:bg-secondary transition-all"
         >
           Todas
         </button>

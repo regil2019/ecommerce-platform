@@ -79,25 +79,25 @@ const ProductCard = ({ product }) => {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-1 flex-1 font-semibold leading-tight text-foreground">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h3 className="mb-1 flex-1 font-semibold leading-snug text-sm sm:text-base text-foreground line-clamp-2">
           {product.name}
         </h3>
-        <p className="mb-3 text-2xl font-bold text-foreground">
+        <p className="mb-2 text-lg sm:text-2xl font-bold text-foreground">
           {formatCurrency(product.price)}
         </p>
 
         <RainbowButton
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className="relative z-20 mt-auto w-full"
+          className="relative z-20 mt-auto w-full h-9 sm:h-11 text-xs sm:text-sm"
           aria-label={t('product.addToCart')}
         >
           {isOutOfStock ? (
             t('product.outOfStock')
           ) : (
             <>
-              <ShoppingCart className="mr-2 h-4 w-4" />
+              <ShoppingCart className="mr-1.5 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
               {t('product.addToCart')}
             </>
           )}

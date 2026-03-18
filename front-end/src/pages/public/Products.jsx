@@ -198,7 +198,7 @@ const Products = ({ searchTerm }) => {
                 </Button>
               </div>
             ) : isLoading ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="flex flex-col space-y-4 rounded-2xl border border-border p-4">
                     <Skeleton className="aspect-square rounded-xl" />
@@ -223,7 +223,7 @@ const Products = ({ searchTerm }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-8 pb-12 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-2 gap-6 pb-12 lg:grid-cols-3">
                   {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}

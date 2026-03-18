@@ -9,33 +9,34 @@ const categories = [
 
 export default function Categories({ onSelectCategory, selectedCategory }) {
   return (
-    <div className="mb-8 p-4 bg-gray-100 rounded">
-      <h3 className="text-xl font-semibold mb-4">Categorias</h3>
-      <div className="flex space-x-4">
+    <div className="mb-10 p-6 bg-card border border-border/50 rounded-2xl shadow-sm backdrop-blur-sm">
+      <h3 className="text-xl font-bold mb-6 text-foreground flex items-center gap-2">
+        <span className="w-1.5 h-6 bg-primary rounded-full" />
+        {t('home.categories')}
+      </h3>
+      <div className="flex gap-3 flex-wrap">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => onSelectCategory(category.name)}
-            className={`relative px-4 py-2 rounded text-white hover:bg-blue-600 ${
-              selectedCategory === category.name ? "bg-blue-700" : "bg-blue-500"
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 border-2 ${
+              selectedCategory === category.name 
+                ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105" 
+                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
             {category.name}
-            {/* Right side highlight on mobile only */}
-            {selectedCategory === category.name && (
-              <span className="absolute top-0 right-0 h-full w-1 bg-yellow-400 md:hidden rounded-l"></span>
-            )}
           </button>
         ))}
         <button
           onClick={() => onSelectCategory(null)}
-          className={`px-4 py-2 rounded hover:bg-gray-400 ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 border-2 ${
             selectedCategory === null
-              ? "bg-gray-400 text-gray-900"
-              : "bg-gray-300 text-gray-700"
+              ? "bg-muted border-muted-foreground/20 text-foreground"
+              : "bg-transparent border-border text-muted-foreground hover:bg-secondary"
           }`}
         >
-          Todas
+          {t('home.allProducts')}
         </button>
       </div>
     </div>
