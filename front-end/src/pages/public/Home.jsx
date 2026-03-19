@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { useI18n } from "../../i18n";
 import { ArrowRight, Sparkles, Zap, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { LumoLogo } from "../../components/LumoLogo";
 
 const Home = () => {
   const { t } = useI18n();
@@ -59,18 +60,18 @@ const Home = () => {
                 header={
                   <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="https://images.unsplash.com/photo-1441984966674-70af963f4509?q=80&w=800&auto=format&fit=crop"
+                      src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=1200"
                       alt="New Arrivals"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                      <span className="text-white text-xs font-bold tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
+                      <span className="text-white text-sm font-bold tracking-widest uppercase opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                         Spring Collection 2025
                       </span>
                     </div>
                   </div>
                 }
-                icon={<Sparkles className="h-4 w-4 text-white drop-shadow-md" />}
+                icon={<Sparkles className="h-6 w-6 text-white drop-shadow-lg opacity-100" />}
                 className="md:col-span-2"
                 onClick={() => window.location.href = '/products?sort=newest'}
               />
@@ -80,10 +81,10 @@ const Home = () => {
                 header={
                   <div className="grid grid-cols-2 gap-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden bg-muted group">
                     {[
-                      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=300&auto=format&fit=crop",
-                      "https://images.unsplash.com/photo-1491633194176-2df2f017409f?q=80&w=300&auto=format&fit=crop",
-                      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=300&auto=format&fit=crop",
-                      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=300&auto=format&fit=crop"
+                      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600",
+                      "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&q=80&w=600",
+                      "https://images.unsplash.com/photo-1526170375885-4d8ecbc95e0c?auto=format&fit=crop&q=80&w=600",
+                      "https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&q=80&w=600"
                     ].map((src, i) => (
                       <img
                         key={i}
@@ -94,7 +95,7 @@ const Home = () => {
                     ))}
                   </div>
                 }
-                icon={<Zap className="h-4 w-4 text-white drop-shadow-md" />}
+                icon={<Zap className="h-6 w-6 text-white drop-shadow-lg opacity-100" />}
                 className="md:col-span-1"
                 onClick={() => window.location.href = '/categories'}
               />
@@ -104,16 +105,16 @@ const Home = () => {
                 header={
                   <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=800&auto=format&fit=crop"
+                      src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&q=80&w=800"
                       alt="Discounts"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                    <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full shadow-2xl">
                       -70% OFF
                     </div>
                   </div>
                 }
-                icon={<ArrowRight className="h-4 w-4 text-white drop-shadow-md" />}
+                icon={<Zap className="h-6 w-6 text-white drop-shadow-lg opacity-100" />}
                 className="md:col-span-1"
                 onClick={() => window.location.href = '/products?sort=price_asc'}
               />
@@ -121,18 +122,23 @@ const Home = () => {
                 title={t('home.support')}
                 description={t('footer.helpCenter')}
                 header={
-                  <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
+                  <div className="flex flex-1 w-full h-full min-h-[12.5rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="https://images.unsplash.com/photo-1521791136064-7986c2959213?q=80&w=800&auto=format&fit=crop"
+                      src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800"
                       alt="Support"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4 text-center">
-                      <p className="text-white text-sm font-medium">Suporte Personalizado 24/7</p>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-8 transition-all duration-500 group-hover:bg-black/50">
+                      <div className="transform transition-all duration-500 group-hover:scale-110 group-hover:rotate-2">
+                        <LumoLogo width={200} height={60} className="text-white drop-shadow-2xl" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <p className="text-white/80 text-xs font-medium tracking-widest uppercase">Support Center 24/7</p>
                     </div>
                   </div>
                 }
-                icon={<ShieldCheck className="h-4 w-4 text-white drop-shadow-md" />}
+                icon={<ShieldCheck className="h-6 w-6 text-white drop-shadow-lg opacity-100" />}
                 className="md:col-span-2"
                 onClick={() => window.location.href = '/about'}
               />
