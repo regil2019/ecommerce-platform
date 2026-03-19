@@ -91,27 +91,27 @@ export default function BannerCarousel() {
   };
 
   return (
-    <div className="relative mb-10 h-[50vh] max-h-[500px] min-h-[300px] w-full overflow-hidden rounded-2xl shadow-lg">
+    <div className="relative mb-8 h-[40vh] max-h-[400px] min-h-[250px] w-full overflow-hidden rounded-xl shadow-md">
       <Slider {...settings}>
         {banners.map((banner) => (
-          <div key={banner.id} className="relative h-[50vh] max-h-[500px] min-h-[300px]">
+          <div key={banner.id} className="relative h-[40vh] max-h-[400px] min-h-[250px]">
             <img
               src={banner.image}
               alt={banner.alt}
               className="h-full w-full object-cover"
               loading="eager"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-            <div className="absolute inset-0 flex flex-col justify-center p-8 text-white sm:p-12 md:p-16 lg:p-20">
-              <div className="max-w-lg">
-                <h2 className="text-3xl font-extrabold tracking-tight text-white drop-shadow-lg sm:text-4xl md:text-5xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+            <div className="absolute inset-0 flex flex-col justify-center p-6 text-white sm:p-10 md:p-12 lg:p-14">
+              <div className="max-w-md">
+                <h2 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg sm:text-3xl md:text-4xl">
                   {banner.title}
                 </h2>
-                <p className="my-4 max-w-prose text-lg text-white/90 drop-shadow-md">
+                <p className="my-3 max-w-prose text-sm sm:text-base text-white/90 drop-shadow-md">
                   {banner.subtitle}
                 </p>
                 <Link to={banner.ctaLink}>
-                  <AnimatedButton className="rounded-full bg-primary text-primary-foreground text-lg font-semibold shadow-lg">
+                  <AnimatedButton className="rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-lg py-1.5 px-6">
                     {banner.cta}
                   </AnimatedButton>
                 </Link>

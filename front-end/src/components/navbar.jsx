@@ -7,6 +7,15 @@ import { useAuth } from '../hooks/useAuth';
 import { useI18n } from '../i18n';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+
 export default function NavBar({ searchTerm, setSearchTerm }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -51,35 +60,35 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
         : 'bg-background/50 backdrop-blur-sm'
         }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16">
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 flex items-center gap-2 group">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl transform group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/25">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg transform group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/25">
               E
             </div>
-            <span className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font-display">
+            <span className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font-display">
               Elevate
             </span>
           </Link>
 
           {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-[280px] mx-4 lg:mx-8">
+          <div className="hidden md:flex flex-1 max-w-[240px] mx-4 lg:mx-6">
             <form onSubmit={handleSearch} className="relative w-full group">
               <input
                 type="text"
                 placeholder={t('common.search')}
-                className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-full pl-12 pr-4 py-2 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 group-hover:bg-secondary/80"
+                className="w-full bg-secondary/50 border-border border-2 text-foreground rounded-full pl-10 pr-4 py-1.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300 group-hover:bg-secondary/80 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-hover:text-primary transition-colors duration-300" />
+              <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 group-hover:text-primary transition-colors duration-300" />
             </form>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-6">
+          <div className="hidden md:flex items-center gap-3 lg:gap-5 text-sm">
             <Link to="/products" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
               {t('nav.products')}
             </Link>
@@ -90,20 +99,20 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
 
             {/* Language Selector */}
             <div className="relative group">
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-secondary transition-colors">
-                <span className="text-xl">{LOCALES[locale].flag}</span>
-                <span className="font-medium text-sm">{LOCALES[locale].name}</span>
+              <button className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-secondary transition-colors">
+                <span className="text-lg">{LOCALES[locale].flag}</span>
+                <span className="font-medium">{LOCALES[locale].name}</span>
               </button>
-              <div className="absolute right-0 top-full mt-2 w-40 bg-card rounded-xl shadow-lg border border-border overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
+              <div className="absolute right-0 top-full mt-2 w-36 bg-card rounded-xl shadow-lg border border-border overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transform translate-y-2 group-hover:translate-y-0 transition-all duration-200">
                 {Object.entries(LOCALES).map(([key, { name, flag }]) => (
                   <button
                     key={key}
                     onClick={() => setLocale(key)}
-                    className={`w-full text-left px-4 py-2 hover:bg-secondary transition-colors flex items-center gap-3 ${locale === key ? 'bg-primary/10 text-primary' : ''
+                    className={`w-full text-left px-3 py-1.5 hover:bg-secondary transition-colors flex items-center gap-2.5 ${locale === key ? 'bg-primary/10 text-primary' : ''
                       }`}
                   >
-                    <span className="text-xl">{flag}</span>
-                    <span className="font-medium text-sm">{name}</span>
+                    <span className="text-lg">{flag}</span>
+                    <span className="font-medium text-xs">{name}</span>
                   </button>
                 ))}
               </div>
@@ -111,70 +120,73 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
 
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:rotate-90"
+              className="p-1.5 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:rotate-90"
               aria-label="Toggle theme"
             >
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            {/* Auth Actions */}
+            {/* User Menu Dropdown (Hamburger on Desktop) */}
             {!user ? (
               <Link
                 to="/login"
-                className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-primary/40 transform hover:-translate-y-0.5"
+                className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-all duration-300 shadow-lg shadow-primary/25 hover:shadow-primary/40 transform hover:-translate-y-0.5 text-xs"
               >
                 {t('nav.login')}
               </Link>
             ) : (
-              <>
-                {user.role === 'admin' && (
-                  <Link to="/admin" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                    <LayoutDashboard size={20} />
-                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                      Dashboard
-                    </span>
-                  </Link>
-                )}
-
-                <Link to="/favorites" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                  <Heart size={20} />
-                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {t('nav.favorites')}
-                  </span>
-                </Link>
-
-                <Link to="/orders" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                  <Package size={20} />
-                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {t('nav.orders')}
-                  </span>
-                </Link>
-
-                <Link to="/profile" className="p-2 rounded-full hover:bg-secondary text-foreground/80 transition-colors relative group">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-xs font-bold">
-                    {user.name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                </Link>
-
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-full hover:bg-secondary text-foreground/80 hover:text-destructive transition-colors relative group"
-                  title="Logout"
-                >
-                  <LogOut size={20} />
-                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {t('nav.logout')}
-                  </span>
-                </button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 p-1 rounded-full hover:bg-secondary text-foreground/80 transition-all group">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm">
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <Menu size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 mt-1">
+                  <DropdownMenuLabel className="flex flex-col">
+                    <span className="font-bold text-sm">{user.name}</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">{user.email}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>{t('nav.dashboard') || 'Dashboard'}</span>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>{t('nav.favorites')}</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={() => navigate('/orders')}>
+                    <Package className="mr-2 h-4 w-4" />
+                    <span>{t('nav.orders')}</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>{t('nav.profile')}</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t('nav.logout')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
-
-            <div className="flex items-center gap-2 border-l border-border/50 pl-4 ml-2">
-              <Link to="/cart" className="relative p-2 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
-                <ShoppingCart size={20} />
+            <div className="flex items-center gap-2 border-l border-border/50 pl-3 ml-1">
+              <Link to="/cart" className="relative p-1.5 rounded-full hover:bg-secondary text-foreground/80 transition-all duration-300 hover:scale-110 group">
+                <ShoppingCart size={18} />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-lg border-2 border-background animate-in zoom-in">
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full shadow-lg border-2 border-background">
                     {totalItems}
                   </span>
                 )}

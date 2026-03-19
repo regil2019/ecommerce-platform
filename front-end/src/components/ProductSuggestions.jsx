@@ -15,7 +15,7 @@ function NextArrow(props) {
       className="absolute -top-12 right-0 z-10 rounded-full bg-accent p-2 text-foreground shadow-md transition-colors hover:bg-accent/80"
       aria-label="Next slide"
     >
-      <ChevronRight size={24} />
+      <ChevronRight size={18} />
     </button>
   );
 }
@@ -28,7 +28,7 @@ function PrevArrow(props) {
       className="absolute -top-12 right-12 z-10 rounded-full bg-accent p-2 text-foreground shadow-md transition-colors hover:bg-accent/80"
       aria-label="Previous slide"
     >
-      <ChevronLeft size={24} />
+      <ChevronLeft size={18} />
     </button>
   );
 }
@@ -101,10 +101,10 @@ const ProductSuggestions = ({ limit = 8 }) => {
   };
 
   return (
-    <section className="w-full py-12">
+    <section className="w-full py-6">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative mb-6">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+        <div className="relative mb-4">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {t("home.recommendations")}
           </h2>
         </div>

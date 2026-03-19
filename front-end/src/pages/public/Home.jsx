@@ -44,15 +44,15 @@ const Home = () => {
           <BannerCarousel />
         </section>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-12 space-y-12 sm:space-y-16">
 
           {/* Features / Bento Grid */}
           <section>
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold tracking-tight mb-2">{t('home.explore')}</h2>
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold tracking-tight mb-2">{t('home.explore')}</h2>
               <p className="text-muted-foreground">{t('home.exploreDesc')}</p>
             </div>
-            <BentoGrid className="max-w-7xl mx-auto">
+            <BentoGrid className="max-w-6xl mx-auto px-2">
               <BentoGridItem
                 title={t('home.newArrivals')}
                 description={t('home.newArrivalsDesc')}
@@ -122,8 +122,8 @@ const Home = () => {
 
           {/* Featured / Key Products */}
           <section>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold tracking-tight">{t('home.trending')}</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold tracking-tight">{t('home.trending')}</h2>
               <Link to="/products">
                 <Button variant="ghost" className="gap-2">
                   {t('home.viewAll')} <ArrowRight className="h-4 w-4" />
@@ -153,7 +153,7 @@ const Home = () => {
           </section>
 
           {/* Recommendations Slider */}
-          <section className="rounded-3xl border border-border/50 bg-card/30 p-8 backdrop-blur-sm">
+          <section className="rounded-2xl border border-border/50 bg-card/30 p-4 sm:p-6 backdrop-blur-sm">
             <ProductSuggestions limit={8} />
           </section>
         </div>
