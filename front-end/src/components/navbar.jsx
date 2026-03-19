@@ -1,3 +1,9 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, Search, Sun, Moon, User, LogOut, Heart, LayoutDashboard, Package } from 'lucide-react';
+import useCart from '../hooks/useCart';
+import { useTheme } from '../hooks/useTheme';
+import { useAuth } from '../hooks/useAuth';
 import { useI18n } from '../i18n';
 import { motion, AnimatePresence } from 'framer-motion';
 
