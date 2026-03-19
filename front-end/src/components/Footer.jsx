@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
+import { LumoLogo } from './LumoLogo';
 
 import { SubscribeButton } from './magicui/SubscribeButton';
 
@@ -14,10 +15,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-3">
             <Link to="/">
-              <img
-                src="/images/lumo-logo.png"
-                alt="Lumo"
-                className="h-10 w-auto dark:brightness-110"
+              <LumoLogo 
+                width={120} 
+                height={40} 
+                variant="default" 
+                className="dark:brightness-110" 
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">

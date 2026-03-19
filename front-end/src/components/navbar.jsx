@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useI18n } from '../i18n';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ResponsiveLumoLogo, LumoLogo } from './LumoLogo';
 
 import {
   DropdownMenu,
@@ -64,13 +65,8 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
         <div className="flex items-center justify-between h-14 sm:h-16">
 
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center gap-2 group">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg transform group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/25">
-              E
-            </div>
-            <span className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 font-display">
-              Elevate
-            </span>
+          <Link to="/" className="flex-shrink-0 flex items-center group">
+            <ResponsiveLumoLogo variant="default" />
           </Link>
 
           {/* Desktop Search */}
@@ -239,7 +235,7 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-border/50">
-                  <span className="font-bold text-xl text-primary">Elevate</span>
+                  <LumoLogo width={80} height={26} variant="default" />
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-2 rounded-full hover:bg-secondary text-foreground"
