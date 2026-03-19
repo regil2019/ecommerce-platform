@@ -71,6 +71,14 @@ export default function Checkout() {
 
         setCheckoutLoading(true);
         try {
+            // Check if Stripe is initialized (even if session is created on backend, 
+            // the redirect might fail if Stripe.js is blocked)
+            const stripe = await stripePromise;
+            if (!stripe && !import.meta.env.DEV) {
+                console.error("Stripe.js failed to load. Check your network or content security policy.");
+                toast.warning(t('common.errorNetwork') + " (Stripe.js)");
+            }
+
             const result = await createCheckoutSession({
                 currency,
                 promo_code: promoResult ? promoCode.trim() : undefined,
@@ -225,7 +233,7 @@ export default function Checkout() {
                             <ShimmerButton
                                 onClick={handleCheckout}
                                 disabled={checkoutLoading}
-                                className="w-full py-3 text-base font-medium mt-2 text-white shadow-lg shadow-primary/20"
+                                className="w-full py-3 text-base font-medium mt-2 text-primary-foreground dark:text-primary-foreground shadow-lg shadow-primary/20"
                                 background="hsl(var(--primary))"
                                 shimmerColor="hsl(var(--primary-foreground))"
                             >

@@ -80,7 +80,15 @@ api.interceptors.response.use(
         error.userMessage = 'Request timed out. Please try again.';
         error.userMessageKey = 'common.errorTimeout';
       } else {
-        error.userMessage = 'Network error. Check your connection.';
+        // Special check for production misconfiguration
+        const isProd = import.meta.env.PROD;
+        const isLocalhost = api.defaults.baseURL?.includes('localhost') || api.defaults.baseURL?.includes('127.0.0.1');
+        
+        if (isProd && isLocalhost) {
+          error.userMessage = 'Configuration Error: Production build is incorrectly pointing to localhost API. Please check VITE_API_URL.';
+        } else {
+          error.userMessage = 'Network error. Check your connection.';
+        }
         error.userMessageKey = 'common.errorNetwork';
       }
       return Promise.reject(error);
