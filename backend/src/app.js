@@ -47,22 +47,6 @@ dotenv.config();
 
 const app = express();
 
-app.use(compression());
-
-/* =========================
-   🚀 Global Request Timeout
-========================= */
-app.use((req, res, next) => {
-  // Set timeout to 65s (slightly higher than Axios 60s)
-  res.setTimeout(65000, () => {
-    console.error(`[Timeout] Request ${req.method} ${req.originalUrl} timed out after 65s`);
-    if (!res.headersSent) {
-      res.status(503).json({ error: 'Request timeout' });
-    }
-  });
-  next();
-});
-
 /* =========================
    ✅ CORS Configuration
 ========================= */
@@ -79,15 +63,15 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
 
-      // Check if origin is a Vercel deployment
-      const isVercel = /\.vercel\.app$/.test(origin);
-      const isAllowed = allowedOrigins.includes(origin);
+      // Check if origin is a Vercel deployment OR explicitly allowed
+      const isVercel = origin.endsWith('.vercel.app');
+      const isAllowed = allowedOrigins.some(ao => origin === ao || (typeof ao === 'string' && origin.startsWith(ao)));
 
       if (isVercel || isAllowed) {
         return callback(null, true);
       }
 
-      console.warn(`CORS blocked for origin: ${origin}`);
+      console.warn(`[CORS Blocked] Origin: ${origin}`);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
@@ -100,10 +84,29 @@ app.use(
       "Expires", 
       "X-Requested-With",
       "sentry-trace",
-      "baggage"
+      "baggage",
+      "Accept",
+      "Origin"
     ],
+    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs)/Proxies choke on 204
   })
 );
+
+app.use(compression());
+
+/* =========================
+   🚀 Global Request Timeout
+========================= */
+app.use((req, res, next) => {
+  // Set timeout to 65s (slightly higher than Axios 60s)
+  res.setTimeout(65000, () => {
+    console.error(`[Timeout] Request ${req.method} ${req.originalUrl} timed out after 65s`);
+    if (!res.headersSent) {
+      res.status(503).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
 
 /* =========================
    Base Middlewares
