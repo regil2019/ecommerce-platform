@@ -46,12 +46,17 @@ export function ThemeProvider({ children }) {
         return () => mql.removeEventListener('change', handler);
     }, [theme]);
 
+    const toggleTheme = useCallback(() => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+    }, [theme, setTheme]);
+
     const value = useMemo(() => ({
         theme,           // raw preference: 'light' | 'dark' | 'system'
         resolvedTheme,   // actual applied: 'light' | 'dark'
         setTheme,
+        toggleTheme,
         isDark: resolvedTheme === 'dark',
-    }), [theme, resolvedTheme, setTheme]);
+    }), [theme, resolvedTheme, setTheme, toggleTheme]);
 
     return (
         <ThemeContext.Provider value={value}>
