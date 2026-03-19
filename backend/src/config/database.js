@@ -40,10 +40,11 @@ if (process.env.DATABASE_URL) {
       ssl: getSSLConfig()
     },
     pool: {
-      max: 10,
+      max: 5,
       min: 0,
-      acquire: 30000,
-      idle: 10000
+      acquire: 60000,
+      idle: 10000,
+      evict: 1000
     },
     define: {
       timestamps: true,
@@ -65,10 +66,11 @@ if (process.env.DATABASE_URL) {
         ssl: getSSLConfig()
       },
       pool: {
-        max: 10,
+        max: 5,
         min: 0,
-        acquire: 30000,
-        idle: 10000
+        acquire: 60000,
+        idle: 10000,
+        evict: 1000
       },
       define: {
         timestamps: true,

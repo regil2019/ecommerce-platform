@@ -13,16 +13,26 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY_FACTOR = 2000;
 
 const shouldRetry = (error) => {
-  const { config } = error;
-  return (
-    config?.method === 'get' && // Only retry GET requests
-    !error.response && // Network error
-    (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) // Timeout
-  );
+  const { config, response } = error;
+  
+  // Only retry GET requests
+  if (config?.method !== 'get') return false;
+
+  // Retry on network errors or timeouts
+  if (!response) {
+    return error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+  }
+
+  // Retry on specific server/gateway errors often seen during cold starts or high load
+  const retryableStatuses = [502, 503, 504];
+  return retryableStatuses.includes(response.status);
 };
 
 // --- Request Interceptor ---
 api.interceptors.request.use((config) => {
+  // Debug log for production (remove after verification)
+  console.log(`[API REQUEST] ${config.method?.toUpperCase()} ${config.url} | Timeout: ${config.timeout}ms`);
+
   // Initialize retry count
   config.__retryCount = config.__retryCount || 0;
 

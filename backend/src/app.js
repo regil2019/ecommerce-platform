@@ -1,9 +1,23 @@
 import './config/env.js'
+
+// --- Critical Node.js Process Handlers ---
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION] at:', promise, 'reason:', reason);
+  // In production, you might want to restart gracefully or log to an external service
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION] thrown:', err);
+  // Mandatory: restart is usually required after uncaughtException
+  // process.exit(1); 
+});
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import helmet from "helmet";
+import compression from "compression";
 import rateLimit from "express-rate-limit";
 import expressWinston from 'express-winston';
 
@@ -32,6 +46,22 @@ import promotionRoutes from "./routes/promotionRoutes.js";
 dotenv.config();
 
 const app = express();
+
+app.use(compression());
+
+/* =========================
+   🚀 Global Request Timeout
+========================= */
+app.use((req, res, next) => {
+  // Set timeout to 65s (slightly higher than Axios 60s)
+  res.setTimeout(65000, () => {
+    console.error(`[Timeout] Request ${req.method} ${req.originalUrl} timed out after 65s`);
+    if (!res.headersSent) {
+      res.status(503).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
 
 /* =========================
    ✅ CORS Configuration

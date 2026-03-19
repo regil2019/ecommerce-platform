@@ -6,6 +6,7 @@ import { Op, ValidationError } from 'sequelize'
 import { validationResult } from 'express-validator'
 import { productValidators } from '../validators/productValidators.js'
 import behaviorService from '../services/behaviorService.js'
+import cacheService from '../services/cacheService.js'
 
 const router = express.Router()
 
@@ -428,23 +429,44 @@ router.get('/', optionalAuthenticate, productsLimiter, async (req, res, next) =>
       order.push(['id', 'DESC'])
     }
 
-    const { count, rows } = await Product.findAndCountAll({
-      attributes: ['id', 'name', 'price', 'images', 'main_image', 'stock', 'createdAt'],
-      where,
-      order,
-      limit: limitNum,
-      offset: offset,
-      include: [
-        {
-          model: Category,
-          as: 'category',
-          attributes: ['id', 'name']
-        }
-      ],
-      distinct: true // Important for correct count with includes
-    })
+    const timerKey = `products_query_${Date.now()}`
+    console.time(timerKey)
 
-    // Decorate with isFavorite if user is authenticated
+    // --- Cache Lookup ---
+    const cacheKey = `products_${JSON.stringify(req.query)}`
+    const cachedData = cacheService.get(cacheKey)
+    
+    let count, rows
+
+    if (cachedData) {
+      count = cachedData.count
+      // Deep clone to avoid mutating the original cache entry
+      rows = JSON.parse(JSON.stringify(cachedData.rows))
+    } else {
+      const result = await Product.findAndCountAll({
+        attributes: ['id', 'name', 'price', 'images', 'main_image', 'stock', 'createdAt'],
+        where,
+        order,
+        limit: limitNum,
+        offset: offset,
+        include: [
+          {
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name']
+          }
+        ],
+        distinct: true
+      })
+      
+      count = result.count
+      rows = result.rows.map(r => r.get({ plain: true }))
+      
+      // Store in cache
+      cacheService.set(cacheKey, { count, rows })
+    }
+
+    // Decorate with isFavorite (must be done per request to support multiple users)
     if (req.user) {
       const favorites = await Favorite.findAll({
         where: { userId: req.user.id },
@@ -453,13 +475,15 @@ router.get('/', optionalAuthenticate, productsLimiter, async (req, res, next) =>
       })
       const favoriteIds = new Set(favorites.map(f => f.productId))
       rows.forEach(product => {
-        product.dataValues.isFavorite = favoriteIds.has(product.id)
+        product.isFavorite = favoriteIds.has(product.id)
       })
     } else {
       rows.forEach(product => {
-        product.dataValues.isFavorite = false
+        product.isFavorite = false
       })
     }
+
+    console.timeEnd(timerKey)
 
     res.json({
       products: rows,

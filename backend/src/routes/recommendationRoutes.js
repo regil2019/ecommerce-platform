@@ -2,8 +2,9 @@ import express from 'express'
 import { authenticate, optionalAuthenticate } from '../middleware/authMiddleware.js'
 import { Favorite } from '../models/index.js'
 
-import { recommendationsLimiter } from '../middleware/rateLimiter.js'
+import recommendationsLimiter from '../middleware/rateLimiter.js'
 import logger from '../config/logger.js'
+import cacheService from '../services/cacheService.js'
 import { Sequelize } from 'sequelize'
 
 const router = express.Router()
@@ -21,21 +22,29 @@ router.get('/test', (req, res) => {
 router.get('/popular', optionalAuthenticate, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 8
+    const cacheKey = `popular_${limit}`
+    const cachedData = cacheService.get(cacheKey)
+    
+    let popularProducts
 
-    // Get products ordered by creation date (newest first) as a simple popularity measure
-    const { Product, Category } = await import('../models/index.js')
+    if (cachedData) {
+      popularProducts = JSON.parse(JSON.stringify(cachedData))
+    } else {
+      const { Product, Category } = await import('../models/index.js')
+      const products = await Product.findAll({
+        limit,
+        order: [['createdAt', 'DESC']],
+        include: [{
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        }]
+      })
+      popularProducts = products.map(p => p.get({ plain: true }))
+      cacheService.set(cacheKey, popularProducts)
+    }
 
-    const popularProducts = await Product.findAll({
-      limit,
-      order: [['createdAt', 'DESC']],
-      include: [{
-        model: Category,
-        as: 'category',
-        attributes: ['id', 'name', 'slug']
-      }]
-    })
-
-    // Decorate with isFavorite if user is authenticated
+    // Decorate with isFavorite
     if (req.user) {
       const favorites = await Favorite.findAll({
         where: { userId: req.user.id },
@@ -44,24 +53,18 @@ router.get('/popular', optionalAuthenticate, async (req, res) => {
       })
       const favoriteIds = new Set(favorites.map(f => f.productId))
       popularProducts.forEach(product => {
-        product.dataValues.isFavorite = favoriteIds.has(product.id)
+        product.isFavorite = favoriteIds.has(product.id)
       })
     } else {
       popularProducts.forEach(product => {
-        product.dataValues.isFavorite = false
+        product.isFavorite = false
       })
     }
 
-    res.json({
-      success: true,
-      data: popularProducts
-    })
+    res.json({ success: true, data: popularProducts })
   } catch (error) {
     logger.error('Error getting popular products:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Error getting popular products'
-    })
+    res.status(500).json({ success: false, message: 'Error getting popular products' })
   }
 })
 
@@ -69,23 +72,29 @@ router.get('/popular', optionalAuthenticate, async (req, res) => {
 router.get('/personalized', optionalAuthenticate, recommendationsLimiter, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10
-    const { Product } = await import('../models/index.js')
+    const cacheKey = `personalized_${limit}`
+    const cachedData = cacheService.get(cacheKey)
+    
+    let recommendations
 
-    // For now, return random products as personalized recommendations
-    // In a real implementation, this would use ML algorithms based on user behavior
-    const allProducts = await Product.findAll({
-      include: [{
-        model: (await import('../models/index.js')).Category,
-        as: 'category',
-        attributes: ['id', 'name', 'slug']
-      }]
-    })
+    if (cachedData) {
+      recommendations = JSON.parse(JSON.stringify(cachedData))
+    } else {
+      const { Product, Category } = await import('../models/index.js')
+      const allProducts = await Product.findAll({
+        include: [{
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        }]
+      })
 
-    // Shuffle array and return limited results
-    const shuffled = allProducts.sort(() => 0.5 - Math.random())
-    const recommendations = shuffled.slice(0, limit)
+      const shuffled = allProducts.sort(() => 0.5 - Math.random())
+      recommendations = shuffled.slice(0, limit).map(p => p.get({ plain: true }))
+      cacheService.set(cacheKey, recommendations)
+    }
 
-    // Decorate with isFavorite if user is authenticated
+    // Decorate with isFavorite
     if (req.user) {
       const favorites = await Favorite.findAll({
         where: { userId: req.user.id },
@@ -94,24 +103,18 @@ router.get('/personalized', optionalAuthenticate, recommendationsLimiter, async 
       })
       const favoriteIds = new Set(favorites.map(f => f.productId))
       recommendations.forEach(product => {
-        product.dataValues.isFavorite = favoriteIds.has(product.id)
+        product.isFavorite = favoriteIds.has(product.id)
       })
     } else {
       recommendations.forEach(product => {
-        product.dataValues.isFavorite = false
+        product.isFavorite = false
       })
     }
 
-    res.json({
-      success: true,
-      data: recommendations
-    })
+    res.json({ success: true, data: recommendations })
   } catch (error) {
     logger.error('Error getting personalized recommendations:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Error getting personalized recommendations'
-    })
+    res.status(500).json({ success: false, message: 'Error getting personalized recommendations' })
   }
 })
 
