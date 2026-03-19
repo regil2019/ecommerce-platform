@@ -2,32 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 /**
- * Lumo Logo Component System
- * Adapted for React/Vite/Tailwind
+ * Lumo Logo Component System - Sun & Wave Design
+ * Optimized with currentColor for automatic light/dark mode support.
  */
 
-const VARIANTS = {
-  default: {
-    stop1: '#6366F1', // Indigo 500
-    stop2: '#3B82F6', // Blue 500
-    text: 'text-primary'
-  },
-  white: {
-    stop1: '#FFFFFF',
-    stop2: '#FFFFFF',
-    text: 'text-white'
-  },
-  dark: {
-    stop1: '#1E293B', // Slate 800
-    stop2: '#334155', // Slate 700
-    text: 'text-slate-900'
-  }
-};
-
-export const LumoIcon = ({ size = 40, variant = 'default', className = '' }) => {
-  const colors = VARIANTS[variant] || VARIANTS.default;
-  const gradientId = `lumoGradientIcon-${variant}`;
-
+export const LumoIcon = ({ size = 40, className = '' }) => {
   return (
     <svg
       width={size}
@@ -35,52 +14,46 @@ export const LumoIcon = ({ size = 40, variant = 'default', className = '' }) => 
       viewBox="0 0 160 160"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className} transition-colors duration-300`}
       role="img"
       aria-label="Lumo Icon"
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: colors.stop1, stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: colors.stop2, stopOpacity: 1 }} />
-        </linearGradient>
-      </defs>
-
       {/* Outer Circle */}
       <circle 
         cx="80" 
         cy="80" 
         r="70" 
-        stroke={`url(#${gradientId})`} 
-        strokeWidth="12" 
+        stroke="currentColor" 
+        strokeWidth="10" 
         fill="none" 
       />
       
-      {/* Inner V-Shape / Compass / Bird */}
+      {/* Wave Line */}
       <path
-        d="M45 65C45 65 65 110 80 110C95 110 115 65 115 65"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="12"
+        d="M40 105C55 115 75 115 85 105C95 95 110 95 125 105"
+        stroke="currentColor"
+        strokeWidth="8"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       
-      {/* Center Dot */}
-      <circle 
-        cx="80" 
-        cy="80" 
-        r="15" 
-        fill={`url(#${gradientId})`} 
+      {/* Sun Semi-circle */}
+      <path
+        d="M55 85C55 72 66 61 80 61C94 61 105 72 105 85"
+        stroke="currentColor"
+        strokeWidth="8"
+        strokeLinecap="round"
       />
+
+      {/* Sun Rays */}
+      <line x1="80" y1="46" x2="80" y2="38" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+      <line x1="61" y1="54" x2="57" y2="48" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+      <line x1="99" y1="54" x2="103" y2="48" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
     </svg>
   );
 };
 
-export const LumoLogo = ({ width = 120, height = 40, variant = 'default', className = '' }) => {
-  const colors = VARIANTS[variant] || VARIANTS.default;
-  const gradientId = `lumoGradientLogo-${variant}`;
-
-  // Maintain aspect ratio: 160 (icon) + space + 280 (text) = 480 total width for 160 height viewBox
+export const LumoLogo = ({ width = 120, height = 40, className = '' }) => {
   return (
     <svg
       width={width}
@@ -88,28 +61,29 @@ export const LumoLogo = ({ width = 120, height = 40, variant = 'default', classN
       viewBox="0 0 480 160"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${className} transition-colors duration-300`}
       role="img"
       aria-label="Lumo Logo"
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: colors.stop1, stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: colors.stop2, stopOpacity: 1 }} />
-        </linearGradient>
-      </defs>
-
       {/* Icon Part */}
       <g transform="translate(0, 0)">
-        <circle cx="80" cy="80" r="70" stroke={`url(#${gradientId})`} strokeWidth="12" fill="none" />
+        <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="none" />
         <path
-          d="M45 65C45 65 65 110 80 110C95 110 115 65 115 65"
-          stroke={`url(#${gradientId})`}
-          strokeWidth="12"
+          d="M40 105C55 115 75 105 85 105C95 105 110 95 125 105"
+          stroke="currentColor"
+          strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <circle cx="80" cy="80" r="15" fill={`url(#${gradientId})`} />
+        <path
+          d="M55 85C55 72 66 61 80 61C94 61 105 72 105 85"
+          stroke="currentColor"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        <line x1="80" y1="46" x2="80" y2="38" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+        <line x1="61" y1="54" x2="57" y2="48" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+        <line x1="99" y1="54" x2="103" y2="48" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
       </g>
 
       {/* Text Part */}
@@ -119,8 +93,8 @@ export const LumoLogo = ({ width = 120, height = 40, variant = 'default', classN
         fontFamily="Inter, system-ui, sans-serif" 
         fontSize="110" 
         fontWeight="800" 
-        fill={variant === 'white' ? '#FFFFFF' : `url(#${gradientId})`}
-        letterSpacing="-4"
+        fill="currentColor"
+        letterSpacing="-5"
       >
         Lumo
       </text>
@@ -128,29 +102,27 @@ export const LumoLogo = ({ width = 120, height = 40, variant = 'default', classN
   );
 };
 
-export const ResponsiveLumoLogo = ({ variant = 'default', className = '' }) => {
+export const ResponsiveLumoLogo = ({ className = '' }) => {
   return (
-    <div className={`flex items-center ${className}`}>
-      {/* Mobile: Icon only */}
+    <div className={`flex items-center text-foreground ${className}`}>
       <div className="block md:hidden">
-        <LumoIcon size={32} variant={variant} />
+        <LumoIcon size={32} />
       </div>
-      {/* Desktop/Tablet: Full Logo */}
       <div className="hidden md:block">
-        <LumoLogo width={140} height={46} variant={variant} />
+        <LumoLogo width={120} height={40} />
       </div>
     </div>
   );
 };
 
-export const AnimatedLumoLogo = ({ width = 120, height = 40, variant = 'default', className = '' }) => {
+export const AnimatedLumoLogo = ({ width = 120, height = 40, className = '' }) => {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`inline-block cursor-pointer ${className}`}
+      className={`inline-block cursor-pointer text-foreground ${className}`}
     >
-      <LumoLogo width={width} height={height} variant={variant} />
+      <LumoLogo width={width} height={height} />
     </motion.div>
   );
 };

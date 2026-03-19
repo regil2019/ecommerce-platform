@@ -66,7 +66,7 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 flex items-center group">
-            <ResponsiveLumoLogo variant="default" />
+            <ResponsiveLumoLogo />
           </Link>
 
           {/* Desktop Search */}
@@ -235,7 +235,7 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-border/50">
-                  <LumoLogo width={80} height={26} variant="default" />
+                  <LumoLogo width={80} height={26} />
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-2 rounded-full hover:bg-secondary text-foreground"

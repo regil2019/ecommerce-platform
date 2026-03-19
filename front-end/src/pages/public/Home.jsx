@@ -57,12 +57,17 @@ const Home = () => {
                 title={t('home.newArrivals')}
                 description={t('home.newArrivalsDesc')}
                 header={
-                  <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden">
+                  <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="/images/banners/banner1.jpg"
+                      src="https://images.unsplash.com/photo-1441984966674-70af963f4509?q=80&w=800&auto=format&fit=crop"
                       alt="New Arrivals"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                      <span className="text-white text-xs font-bold tracking-widest uppercase opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Spring Collection 2025
+                      </span>
+                    </div>
                   </div>
                 }
                 icon={<Sparkles className="h-4 w-4 text-white drop-shadow-md" />}
@@ -73,12 +78,20 @@ const Home = () => {
                 title={t('home.categories')}
                 description={t('home.categoriesDesc')}
                 header={
-                  <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden">
-                    <img
-                      src="/images/banners/banner2.jpg"
-                      alt="Categories"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
+                  <div className="grid grid-cols-2 gap-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden bg-muted group">
+                    {[
+                      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=300&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1491633194176-2df2f017409f?q=80&w=300&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=300&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=300&auto=format&fit=crop"
+                    ].map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={`Category ${i}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ))}
                   </div>
                 }
                 icon={<Zap className="h-4 w-4 text-white drop-shadow-md" />}
@@ -89,12 +102,15 @@ const Home = () => {
                 title={t('home.discounts')}
                 description={t('home.discountsDesc')}
                 header={
-                  <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden">
+                  <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="/images/banners/banner11.jpg"
+                      src="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=800&auto=format&fit=crop"
                       alt="Discounts"
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
+                    <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                      -70% OFF
+                    </div>
                   </div>
                 }
                 icon={<ArrowRight className="h-4 w-4 text-white drop-shadow-md" />}
@@ -105,12 +121,15 @@ const Home = () => {
                 title={t('home.support')}
                 description={t('footer.helpCenter')}
                 header={
-                  <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden">
+                  <div className="flex flex-1 w-full h-full min-h-[10rem] rounded-xl overflow-hidden relative group">
                     <img
-                      src="/images/lumo-logo.png"
+                      src="https://images.unsplash.com/photo-1521791136064-7986c2959213?q=80&w=800&auto=format&fit=crop"
                       alt="Support"
-                      className="w-full h-full object-contain p-4 bg-primary/5 transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4 text-center">
+                      <p className="text-white text-sm font-medium">Suporte Personalizado 24/7</p>
+                    </div>
                   </div>
                 }
                 icon={<ShieldCheck className="h-4 w-4 text-white drop-shadow-md" />}

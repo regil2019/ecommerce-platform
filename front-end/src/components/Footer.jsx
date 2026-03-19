@@ -18,7 +18,6 @@ export default function Footer() {
               <LumoLogo 
                 width={120} 
                 height={40} 
-                variant="default" 
                 className="dark:brightness-110" 
               />
             </Link>
