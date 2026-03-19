@@ -139,9 +139,15 @@ const Home = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                {featuredProducts.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+                {featuredProducts.length > 0 ? (
+                  featuredProducts.map(product => (
+                    <ProductCard key={product.id} product={product} />
+                  ))
+                ) : (
+                  <div className="col-span-full py-12 text-center text-muted-foreground">
+                    {t('common.noResults')}
+                  </div>
+                )}
               </div>
             )}
           </section>

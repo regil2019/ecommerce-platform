@@ -2,14 +2,30 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 30000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   }
 });
 
+// --- Manual Retry Configuration ---
+const MAX_RETRIES = 3;
+const RETRY_DELAY_FACTOR = 2000;
+
+const shouldRetry = (error) => {
+  const { config } = error;
+  return (
+    config?.method === 'get' && // Only retry GET requests
+    !error.response && // Network error
+    (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) // Timeout
+  );
+};
+
 // --- Request Interceptor ---
 api.interceptors.request.use((config) => {
+  // Initialize retry count
+  config.__retryCount = config.__retryCount || 0;
+
   // Remove Content-Type for FormData (let browser set it)
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
@@ -35,7 +51,20 @@ api.interceptors.request.use((config) => {
 // --- Response Interceptor ---
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const { config } = error;
+
+    // Retry logic
+    if (config && shouldRetry(error) && config.__retryCount < MAX_RETRIES) {
+      config.__retryCount += 1;
+      const delay = config.__retryCount * RETRY_DELAY_FACTOR;
+      
+      console.warn(`Retry attempt ${config.__retryCount} after ${delay}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return api(config);
+    }
+
     if (!error.response) {
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         error.userMessage = 'Request timed out. Please try again.';

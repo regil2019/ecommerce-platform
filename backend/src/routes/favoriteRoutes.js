@@ -59,6 +59,40 @@ router.post('/', authenticate, favoritesLimiter, async (req, res) => {
   }
 })
 
+// Alternar produto nos favoritos (Toggle)
+router.post('/toggle', authenticate, favoritesLimiter, async (req, res) => {
+  try {
+    const { productId } = req.body
+    const userId = req.user.id
+
+    // Verifica se o produto existe
+    const product = await Product.findByPk(productId)
+    if (!product) {
+      return res.status(404).json({ error: 'Produto não encontrado' })
+    }
+
+    // Verifica se já está nos favoritos
+    const existingFavorite = await Favorite.findOne({
+      where: { userId, productId }
+    })
+
+    if (existingFavorite) {
+      // Remove se já existir
+      await behaviorService.trackFavoriteRemove(userId, productId)
+      await existingFavorite.destroy()
+      return res.json({ isFavorite: false, message: 'Removido dos favoritos' })
+    } else {
+      // Adiciona se não existir
+      await Favorite.create({ userId, productId })
+      await behaviorService.trackFavoriteAdd(userId, productId)
+      return res.json({ isFavorite: true, message: 'Adicionado aos favoritos' })
+    }
+  } catch (error) {
+    console.error('Erro ao alternar favorito:', error)
+    res.status(500).json({ error: 'Erro ao alternar favorito' })
+  }
+})
+
 // Remover produto dos favoritos
 router.delete('/:productId', authenticate, async (req, res) => {
   try {

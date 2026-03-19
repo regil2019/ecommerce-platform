@@ -1,5 +1,7 @@
 import express from 'express'
-import { authenticate } from '../middleware/authMiddleware.js'
+import { authenticate, optionalAuthenticate } from '../middleware/authMiddleware.js'
+import { Favorite } from '../models/index.js'
+
 import { recommendationsLimiter } from '../middleware/rateLimiter.js'
 import logger from '../config/logger.js'
 import { Sequelize } from 'sequelize'
@@ -16,7 +18,7 @@ router.get('/test', (req, res) => {
 })
 
 // Popular products
-router.get('/popular', async (req, res) => {
+router.get('/popular', optionalAuthenticate, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 8
 
@@ -33,6 +35,23 @@ router.get('/popular', async (req, res) => {
       }]
     })
 
+    // Decorate with isFavorite if user is authenticated
+    if (req.user) {
+      const favorites = await Favorite.findAll({
+        where: { userId: req.user.id },
+        attributes: ['productId'],
+        raw: true
+      })
+      const favoriteIds = new Set(favorites.map(f => f.productId))
+      popularProducts.forEach(product => {
+        product.dataValues.isFavorite = favoriteIds.has(product.id)
+      })
+    } else {
+      popularProducts.forEach(product => {
+        product.dataValues.isFavorite = false
+      })
+    }
+
     res.json({
       success: true,
       data: popularProducts
@@ -47,7 +66,7 @@ router.get('/popular', async (req, res) => {
 })
 
 // Personalized recommendations
-router.get('/personalized', authenticate, recommendationsLimiter, async (req, res) => {
+router.get('/personalized', optionalAuthenticate, recommendationsLimiter, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10
     const { Product } = await import('../models/index.js')
@@ -66,6 +85,23 @@ router.get('/personalized', authenticate, recommendationsLimiter, async (req, re
     const shuffled = allProducts.sort(() => 0.5 - Math.random())
     const recommendations = shuffled.slice(0, limit)
 
+    // Decorate with isFavorite if user is authenticated
+    if (req.user) {
+      const favorites = await Favorite.findAll({
+        where: { userId: req.user.id },
+        attributes: ['productId'],
+        raw: true
+      })
+      const favoriteIds = new Set(favorites.map(f => f.productId))
+      recommendations.forEach(product => {
+        product.dataValues.isFavorite = favoriteIds.has(product.id)
+      })
+    } else {
+      recommendations.forEach(product => {
+        product.dataValues.isFavorite = false
+      })
+    }
+
     res.json({
       success: true,
       data: recommendations
@@ -80,7 +116,7 @@ router.get('/personalized', authenticate, recommendationsLimiter, async (req, re
 })
 
 // Similar products
-router.get('/similar/:productId', async (req, res) => {
+router.get('/similar/:productId', optionalAuthenticate, async (req, res) => {
   try {
     const { productId } = req.params
     const limit = parseInt(req.query.limit) || 4
@@ -110,6 +146,23 @@ router.get('/similar/:productId', async (req, res) => {
       limit,
       order: [['createdAt', 'DESC']] // Show newer products first
     })
+
+    // Decorate with isFavorite if user is authenticated
+    if (req.user) {
+      const favorites = await Favorite.findAll({
+        where: { userId: req.user.id },
+        attributes: ['productId'],
+        raw: true
+      })
+      const favoriteIds = new Set(favorites.map(f => f.productId))
+      similarProducts.forEach(product => {
+        product.dataValues.isFavorite = favoriteIds.has(product.id)
+      })
+    } else {
+      similarProducts.forEach(product => {
+        product.dataValues.isFavorite = false
+      })
+    }
 
     res.json({
       success: true,

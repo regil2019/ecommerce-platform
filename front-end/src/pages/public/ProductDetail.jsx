@@ -161,6 +161,7 @@ export default function ProductDetail() {
               <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">{product.name}</h1>
               <FavoriteButton
                 productId={product.id}
+                initialIsFavorite={product.isFavorite}
                 size="w-10 h-10"
                 className="static bg-transparent p-0 hover:bg-transparent text-muted-foreground hover:text-red-500 transition-colors"
               />

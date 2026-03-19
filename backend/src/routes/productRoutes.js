@@ -1,6 +1,6 @@
 import express from 'express'
-import { Product, Category } from '../models/index.js'
-import { authenticate, isAdmin } from '../middleware/authMiddleware.js'
+import { Product, Category, Favorite } from '../models/index.js'
+import { authenticate, optionalAuthenticate, isAdmin } from '../middleware/authMiddleware.js'
 import { productsLimiter } from '../middleware/rateLimiter.js'
 import { Op, ValidationError } from 'sequelize'
 import { validationResult } from 'express-validator'
@@ -389,7 +389,7 @@ router.delete('/:id', authenticate, isAdmin, async (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.get('/', productsLimiter, async (req, res, next) => {
+router.get('/', optionalAuthenticate, productsLimiter, async (req, res, next) => {
   try {
     const { category, search, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query
 
@@ -443,6 +443,23 @@ router.get('/', productsLimiter, async (req, res, next) => {
       ],
       distinct: true // Important for correct count with includes
     })
+
+    // Decorate with isFavorite if user is authenticated
+    if (req.user) {
+      const favorites = await Favorite.findAll({
+        where: { userId: req.user.id },
+        attributes: ['productId'],
+        raw: true
+      })
+      const favoriteIds = new Set(favorites.map(f => f.productId))
+      rows.forEach(product => {
+        product.dataValues.isFavorite = favoriteIds.has(product.id)
+      })
+    } else {
+      rows.forEach(product => {
+        product.dataValues.isFavorite = false
+      })
+    }
 
     res.json({
       products: rows,
@@ -509,7 +526,7 @@ router.get('/', productsLimiter, async (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', optionalAuthenticate, async (req, res, next) => {
   try {
     const product = await Product.findByPk(req.params.id, {
       attributes: ['id', 'name', 'price', 'images', 'main_image', 'stock', 'description', 'categoryId', 'createdAt'],
@@ -525,9 +542,19 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).json({ error: 'Produto não encontrado' })
     }
 
-    // Track product view if user is authenticated
-    if (req.user && req.user.id) {
+    // Decorate with isFavorite if user is authenticated
+    if (req.user) {
+      const favorite = await Favorite.findOne({
+        where: { userId: req.user.id, productId: req.params.id },
+        attributes: ['id'],
+        raw: true
+      })
+      product.dataValues.isFavorite = !!favorite
+      
+      // Track product view if user is authenticated
       await behaviorService.trackProductView(req.user.id, req.params.id)
+    } else {
+      product.dataValues.isFavorite = false
     }
 
     res.json(product)

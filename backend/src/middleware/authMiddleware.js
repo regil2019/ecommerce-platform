@@ -27,6 +27,33 @@ export const authenticate = (req, res, next) => {
   }
 }
 
+// Soft authentication: populate req.user if token is valid, but don't block request if not
+export const optionalAuthenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    req.user = null
+    return next()
+  }
+
+  const token = authHeader.split(' ')[1]
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET)
+
+    if (decoded.id && decoded.role) {
+      req.user = { id: decoded.id, role: decoded.role }
+    } else {
+      req.user = null
+    }
+    next()
+  } catch (error) {
+    // If token is invalid or expired, we just treat as unauthenticated for optional auth
+    req.user = null
+    next()
+  }
+}
+
 // Admin Authorization Middleware
 export const isAdmin = (req, res, next) => {
   if (!req.user || !req.user.role) {

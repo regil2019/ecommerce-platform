@@ -1,44 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { addToFavorites, removeFromFavorites, checkFavoriteStatus } from "../services/favoriteApi";
+import { toggleFavorite } from "../services/favoriteApi";
 import { toast } from "react-toastify";
 import { useI18n } from "../i18n";
 
-const FavoriteButton = ({ productId, size = "w-6 h-6", className = "" }) => {
+const FavoriteButton = ({ productId, initialIsFavorite = false, size = "w-6 h-6", className = "" }) => {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [loading, setLoading] = useState(false);
 
   const isLoggedIn = user || localStorage.getItem("token");
 
+  // Sync with prop changes (when products are re-fetched)
   useEffect(() => {
-    let isMounted = true;
-
-    const loadFavoriteStatus = async () => {
-      if (user && productId) {
-        try {
-          const response = await checkFavoriteStatus(productId);
-          if (isMounted) {
-            setIsFavorite(response.isFavorite);
-          }
-        } catch (error) {
-          console.error("Favorite status error:", error);
-          if (isMounted) {
-            setIsFavorite(false);
-          }
-        }
-      } else {
-        if (isMounted) {
-          setIsFavorite(false);
-        }
-      }
-    };
-
-    loadFavoriteStatus();
-    return () => { isMounted = false; };
-  }, [user, productId]);
+    setIsFavorite(initialIsFavorite);
+  }, [initialIsFavorite]);
 
   const handleToggleFavorite = async (e) => {
     e.preventDefault();
@@ -49,19 +27,28 @@ const FavoriteButton = ({ productId, size = "w-6 h-6", className = "" }) => {
       return;
     }
 
+    const previousState = isFavorite;
+    
+    // Optimistic Update
+    setIsFavorite(!previousState);
     setLoading(true);
+
     try {
-      if (isFavorite) {
-        await removeFromFavorites(productId);
-        setIsFavorite(false);
-        toast.success(t("product.removeFromFavorites"));
-      } else {
-        await addToFavorites(productId);
-        setIsFavorite(true);
+      const response = await toggleFavorite(productId);
+      // Optional: sync with server response if needed (isFavorite from response)
+      if (typeof response.isFavorite !== 'undefined') {
+        setIsFavorite(response.isFavorite);
+      }
+      
+      if (response.isFavorite) {
         toast.success(t("product.addToFavorites"));
+      } else {
+        toast.success(t("product.removeFromFavorites"));
       }
     } catch (error) {
       console.error("Favorite toggle error:", error);
+      // Rollback
+      setIsFavorite(previousState);
       toast.error(t("common.error"));
     } finally {
       setLoading(false);
@@ -78,16 +65,12 @@ const FavoriteButton = ({ productId, size = "w-6 h-6", className = "" }) => {
       disabled={loading}
       className={`absolute right-2 top-2 z-10 rounded-full bg-card/80 p-2 transition-colors duration-200 hover:bg-card ${loading ? "opacity-50" : ""} ${className}`}
       aria-label={isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
-      title={loading ? t("common.loading") : isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
+      title={isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
     >
-      {loading ? (
-        <div className={`${size} animate-spin rounded-full border-2 border-muted-foreground/30 border-t-destructive`} />
-      ) : (
-        <Heart
-          className={`${size} transition-colors ${isFavorite ? "fill-current text-destructive" : "text-muted-foreground hover:text-destructive"
-            }`}
-        />
-      )}
+      <Heart
+        className={`${size} transition-colors ${isFavorite ? "fill-current text-destructive" : "text-muted-foreground hover:text-destructive"
+          }`}
+      />
     </button>
   );
 };
