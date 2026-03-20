@@ -233,7 +233,7 @@ export default function Checkout() {
                             <ShimmerButton
                                 onClick={handleCheckout}
                                 disabled={checkoutLoading}
-                                className="w-full py-3 text-base font-bold mt-2 text-primary-foreground shadow-lg shadow-primary/20"
+                                className="w-full py-3 text-base font-bold mt-2 text-white dark:text-slate-950 shadow-lg shadow-primary/20"
                                 background="hsl(var(--primary))"
                                 shimmerColor="hsl(var(--primary-foreground))"
                             >
