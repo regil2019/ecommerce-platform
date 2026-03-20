@@ -7,9 +7,11 @@
 :root {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Light palette */
-  --background: 0 0% 98%;
+  /* Light palette — Premium Soft */
+  --background: 210 20% 99%;
+  --background-rgb: 252, 253, 255;
   --foreground: 222.2 84% 4.9%;
+  --foreground-rgb: 2, 8, 23;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
@@ -24,13 +26,13 @@
   --accent-foreground: 222.2 47.4% 11.2%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
+  --border: 214.3 32% 91%;
   --input: 214.3 31.8% 91.4%;
   --ring: 222.2 84% 4.9%;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   /* Sidebar */
-  --sidebar: 0 0% 98%;
+  --sidebar: 210 20% 99%;
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 240 5.9% 10%;
   --sidebar-primary-foreground: 0 0% 98%;
@@ -46,11 +48,14 @@
 }
 
 .dark {
-  --background: 224 71% 4%;
+  /* Dark palette — Deep & Soft */
+  --background: 222 47% 4%;
+  --background-rgb: 5, 8, 15;
   --foreground: 213 31% 91%;
-  --card: 224 71% 4%;
+  --foreground-rgb: 232, 237, 245;
+  --card: 222 47% 7%;
   --card-foreground: 213 31% 91%;
-  --popover: 224 71% 4%;
+  --popover: 222 47% 7%;
   --popover-foreground: 213 31% 91%;
   --primary: 210 40% 98%;
   --primary-foreground: 222.2 47.4% 11.2%;
@@ -66,7 +71,7 @@
   --input: 216 34% 17%;
   --ring: 216 34% 17%;
 
-  --sidebar: 240 5.9% 10%;
+  --sidebar: 222 47% 7%;
   --sidebar-foreground: 240 4.8% 95.9%;
   --sidebar-primary: 224.3 76.3% 48%;
   --sidebar-primary-foreground: 0 0% 100%;
@@ -149,6 +154,34 @@ p { font-size: clamp(0.85rem, 1.5vw, 0.95rem); line-height: 1.5; }
 
 .hover-shadow:hover {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   UI Utilities
+   ========================================= */
+.glass-morphism {
+  background: rgba(var(--background-rgb), 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(var(--foreground-rgb), 0.08);
+}
+
+.dark .glass-morphism {
+  background: rgba(var(--background-rgb), 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-shadow-sm {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* =========================================

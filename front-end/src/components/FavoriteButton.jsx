@@ -63,12 +63,12 @@ const FavoriteButton = ({ productId, initialIsFavorite = false, size = "w-6 h-6"
     <button
       onClick={handleToggleFavorite}
       disabled={loading}
-      className={`absolute right-2 top-2 z-10 rounded-full bg-card/80 p-2 transition-colors duration-200 hover:bg-card ${loading ? "opacity-50" : ""} ${className}`}
+      className={`absolute right-2 top-2 z-10 rounded-full glass-morphism p-2 transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm ${loading ? "opacity-50" : ""} ${className}`}
       aria-label={isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
       title={isFavorite ? t("product.removeFromFavorites") : t("product.addToFavorites")}
     >
       <Heart
-        className={`${size} transition-colors ${isFavorite ? "fill-current text-destructive" : "text-muted-foreground hover:text-destructive"
+        className={`${size} transition-all duration-300 ${isFavorite ? "fill-destructive text-destructive scale-110" : "text-foreground/60 hover:text-destructive"
           }`}
       />
     </button>

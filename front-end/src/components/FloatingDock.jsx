@@ -19,9 +19,9 @@ export const FloatingDock = () => {
     ];
 
     return (
-        <div className="fixed bottom-4 left-0 right-0 z-50 pointer-events-none flex justify-center">
+        <div className="fixed bottom-6 left-0 right-0 z-50 pointer-events-none flex justify-center">
             <div className="pointer-events-auto">
-                <Dock items={dockItems} className="border border-border/40 bg-background/80 backdrop-blur-md shadow-2xl" />
+                <Dock items={dockItems} className="glass-morphism border border-foreground/5 shadow-2xl rounded-full px-2" />
             </div>
         </div>
     );

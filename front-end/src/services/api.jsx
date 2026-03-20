@@ -77,17 +77,25 @@ api.interceptors.response.use(
 
     if (!error.response) {
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        error.userMessage = 'Request timed out. Please try again.';
+        error.userMessage = 'A requisição expirou. Por favor, tente novamente.';
         error.userMessageKey = 'common.errorTimeout';
       } else {
         // Special check for production misconfiguration
         const isProd = import.meta.env.PROD;
-        const isLocalhost = api.defaults.baseURL?.includes('localhost') || api.defaults.baseURL?.includes('127.0.0.1');
+        const currentBaseURL = api.defaults.baseURL;
+        const isLocalhost = currentBaseURL?.includes('localhost') || currentBaseURL?.includes('127.0.0.1');
         
         if (isProd && isLocalhost) {
-          error.userMessage = 'Configuration Error: Production build is incorrectly pointing to localhost API. Please check VITE_API_URL.';
+          error.userMessage = `Erro de Configuração: O build de produção está apontando para a API local (${currentBaseURL}). Verifique a variável VITE_API_URL no Vercel/Koyeb.`;
+          console.error('CRITICAL: Production build pointing to localhost API!', { currentBaseURL });
         } else {
-          error.userMessage = 'Network error. Check your connection.';
+          error.userMessage = 'Erro de rede. Verifique sua conexão com a internet e se o servidor está online.';
+          console.error('Network Error:', { 
+            message: error.message, 
+            code: error.code, 
+            baseURL: currentBaseURL,
+            env: import.meta.env.MODE
+          });
         }
         error.userMessageKey = 'common.errorNetwork';
       }

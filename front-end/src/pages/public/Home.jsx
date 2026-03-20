@@ -65,7 +65,7 @@ const Home = () => {
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
-                      <span className="text-white text-sm font-bold tracking-widest uppercase opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                      <span className="text-white text-sm font-bold tracking-widest uppercase opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 text-shadow-sm">
                         Spring Collection 2025
                       </span>
                     </div>
@@ -134,7 +134,7 @@ const Home = () => {
                       </div>
                     </div>
                     <div className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <p className="text-white/80 text-xs font-medium tracking-widest uppercase">Support Center 24/7</p>
+                      <p className="text-white/80 text-xs font-medium tracking-widest uppercase text-shadow-sm">Support Center 24/7</p>
                     </div>
                   </div>
                 }

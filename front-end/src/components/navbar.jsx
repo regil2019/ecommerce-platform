@@ -56,9 +56,9 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-        ? 'bg-background/80 backdrop-blur-md shadow-md border-b border-border'
-        : 'bg-background/50 backdrop-blur-sm'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? 'glass-morphism shadow-lg border-b border-foreground/5'
+        : 'bg-transparent border-b border-transparent'
         }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -36,8 +36,8 @@ const ProductCard = ({ product }) => {
 
   return (
     <MagicCard
-      className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-border/50"
-      spotlightColor="rgba(59, 130, 246, 0.1)" // Primary color spotlight
+      className="group relative flex h-full flex-col overflow-hidden transition-all duration-500 hover:shadow-2xl border border-border/50 hover-lift active:scale-[0.98]"
+      spotlightColor="rgba(59, 130, 246, 0.12)" // Primary color spotlight
     >
       <Link
         to={`/product/${product.id}`}
@@ -90,7 +90,7 @@ const ProductCard = ({ product }) => {
         <RainbowButton
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className="relative z-20 mt-auto w-full h-7 sm:h-8 text-[9px] sm:text-[10px]"
+          className="relative z-20 mt-auto w-full h-7 sm:h-8 text-[9px] sm:text-[10px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
           aria-label={t('product.addToCart')}
         >
           {isOutOfStock ? (
