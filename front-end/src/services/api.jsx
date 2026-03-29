@@ -9,8 +9,8 @@ const api = axios.create({
 });
 
 // --- Manual Retry Configuration ---
-const MAX_RETRIES = 3;
-const RETRY_DELAY_FACTOR = 2000;
+const MAX_RETRIES = 4;            // Extra attempt to survive cold-start wake-up time
+const RETRY_DELAY_FACTOR = 3000;  // 3 s, 6 s, 9 s, 12 s — gives Koyeb ~30 s to wake
 
 const shouldRetry = (error) => {
   const { config, response } = error;
@@ -18,10 +18,9 @@ const shouldRetry = (error) => {
   // Only retry GET requests
   if (config?.method !== 'get') return false;
 
-  // Retry on network errors or timeouts
-  if (!response) {
-    return error.code === 'ECONNABORTED' || error.message?.includes('timeout');
-  }
+  // Retry on ANY network-level failure (Network Error, CORS preflight failure
+  // during cold start, timeout) — these all arrive with no response object.
+  if (!response) return true;
 
   // Retry on specific server/gateway errors often seen during cold starts or high load
   const retryableStatuses = [502, 503, 504];
@@ -76,8 +75,9 @@ api.interceptors.response.use(
     }
 
     if (!error.response) {
+      // All retries exhausted — provide a user-friendly message
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        error.userMessage = 'A requisição expirou. Por favor, tente novamente.';
+        error.userMessage = 'A requisição expirou. O servidor pode estar iniciando — tente novamente em instantes.';
         error.userMessageKey = 'common.errorTimeout';
       } else {
         // Special check for production misconfiguration
@@ -89,12 +89,14 @@ api.interceptors.response.use(
           error.userMessage = `Erro de Configuração: O build de produção está apontando para a API local (${currentBaseURL}). Verifique a variável VITE_API_URL no Vercel/Koyeb.`;
           console.error('CRITICAL: Production build pointing to localhost API!', { currentBaseURL });
         } else {
-          error.userMessage = 'Erro de rede. Verifique sua conexão com a internet e se o servidor está online.';
-          console.error('Network Error:', { 
+          // Likely a cold-start Network Error — server was sleeping
+          error.userMessage = 'O servidor está iniciando. Aguarde alguns segundos e recarregue a página.';
+          console.error('Network Error (possible cold-start):', { 
             message: error.message, 
             code: error.code, 
             baseURL: currentBaseURL,
-            env: import.meta.env.MODE
+            env: import.meta.env.MODE,
+            retries: config?.__retryCount
           });
         }
         error.userMessageKey = 'common.errorNetwork';

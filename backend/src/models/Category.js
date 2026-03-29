@@ -66,6 +66,12 @@ const Category = db.define('Category', {
       return rawValue;
     }
   },
+  categoryType: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: 'other',
+    field: 'category_type'
+  },
 //   parentId: {
 //     type: DataTypes.INTEGER,
 //     allowNull: true,

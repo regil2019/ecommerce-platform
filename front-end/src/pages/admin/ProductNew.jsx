@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { toast } from "sonner";
-import { createProduct } from "@/services/productApi";
+import { createProduct, updateProduct } from "@/services/productApi";
 import { fetchCategories } from "@/services/categoryApi";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { AlertCircle, Info } from "lucide-react";
@@ -23,11 +23,25 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/i18n";
 import { getImageUrl } from "@/lib/utils";
 
+const SIZE_OPTIONS = {
+  clothing: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+  shoes: ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"],
+  accessories: ["One Size", "S/M", "M/L"],
+  sports: ["XS", "S", "M", "L", "XL", "XXL"],
+  other: [],
+  electronics: [],
+  home_decor: [],
+  beauty: [],
+  books: [],
+  food: [],
+};
 
-export default function ProductNew({ onClose }) {
+
+export default function ProductNew({ onClose, editingProduct = null }) {
   const { t } = useI18n();
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
+  const [selectedSizes, setSelectedSizes] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showTips, setShowTips] = useState(true);
@@ -60,8 +74,26 @@ export default function ProductNew({ onClose }) {
   });
 
   const watchedName = watch("name");
+  const watchedCategoryId = watch("categoryId");
+  const selectedCategory = categories.find(c => String(c.id) === String(watchedCategoryId));
+  const availableSizes = SIZE_OPTIONS[selectedCategory?.categoryType] || [];
+
+  // Pre-fill form when editing
   useEffect(() => {
-    if (watchedName) {
+    if (editingProduct) {
+      setValue("name", editingProduct.name || "");
+      setValue("slug", editingProduct.slug || "");
+      setValue("price", editingProduct.price || "");
+      setValue("stock", editingProduct.stock ?? 0);
+      setValue("categoryId", String(editingProduct.categoryId || ""));
+      setValue("description", editingProduct.description || "");
+      if (editingProduct.images?.length) setImages(editingProduct.images);
+      if (editingProduct.sizes?.length) setSelectedSizes(editingProduct.sizes);
+    }
+  }, [editingProduct, setValue]);
+
+  useEffect(() => {
+    if (watchedName && !editingProduct) {
       const slug = watchedName
         .toLowerCase()
         .trim()
@@ -70,7 +102,7 @@ export default function ProductNew({ onClose }) {
         .replace(/^-+|-+$/g, "");
       setValue("slug", slug);
     }
-  }, [watchedName, setValue]);
+  }, [watchedName, setValue, editingProduct]);
 
   useEffect(() => {
     setLoadingCategories(true);
@@ -87,7 +119,7 @@ export default function ProductNew({ onClose }) {
   }, []);
 
   const onSubmit = async (data) => {
-    if (images.length === 0) {
+    if (images.length === 0 && !editingProduct) {
       toast.error(t("admin.imageRequired"));
       return;
     }
@@ -102,11 +134,18 @@ export default function ProductNew({ onClose }) {
         categoryId: Number(data.categoryId),
         description: data.description || "",
         images: images.map((url) => url.trim()),
+        sizes: selectedSizes.length > 0 ? selectedSizes : null,
       };
 
-      await createProduct(payload);
-      toast.success(t("admin.productCreated"));
-      window.location.href = "/admin/products";
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, payload);
+        toast.success(t("admin.productUpdated"));
+        onClose();
+      } else {
+        await createProduct(payload);
+        toast.success(t("admin.productCreated"));
+        window.location.href = "/admin/products";
+      }
     } catch (error) {
       toast.error(error.message || t("common.error"));
     } finally {
@@ -119,7 +158,7 @@ export default function ProductNew({ onClose }) {
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-primary">
-            {t("admin.newProduct")}
+            {editingProduct ? t("admin.editProductTitle") : t("admin.newProduct")}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {t("admin.newProductDesc")}
@@ -257,6 +296,43 @@ export default function ProductNew({ onClose }) {
               </div>
             </div>
 
+            {/* Size selector - shown when category type has sizes */}
+            {availableSizes.length > 0 && (
+              <div className="space-y-3 rounded-xl border border-border/50 bg-muted/20 p-4">
+                <div>
+                  <Label className="text-sm font-semibold">{t("admin.productSizes")}</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("admin.productSizesDesc")}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSizes((prev) =>
+                          prev.includes(size)
+                            ? prev.filter((s) => s !== size)
+                            : [...prev, size]
+                        )
+                      }
+                      className={`px-3 py-1.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                        selectedSizes.includes(size)
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+                {selectedSizes.length > 0 && (
+                  <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                    ✓ {selectedSizes.length} size(s) selected: {selectedSizes.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
@@ -313,7 +389,7 @@ export default function ProductNew({ onClose }) {
                 disabled={loading}
                 className="flex-1"
               >
-                {loading ? t("common.loading") : t("admin.createProduct")}
+                {loading ? t("common.loading") : (editingProduct ? t("admin.updateProduct") : t("admin.createProduct"))}
               </Button>
             </div>
           </form>

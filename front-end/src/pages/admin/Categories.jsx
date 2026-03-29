@@ -26,16 +26,38 @@ import { fetchCategories, createCategory, updateCategory, deleteCategory } from 
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
 import { getImageUrl } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+
+const CATEGORY_TYPES = [
+  { value: "other", icon: "📦" },
+  { value: "clothing", icon: "👕" },
+  { value: "shoes", icon: "👟" },
+  { value: "accessories", icon: "💍" },
+  { value: "electronics", icon: "📱" },
+  { value: "home_decor", icon: "🏠" },
+  { value: "beauty", icon: "💄" },
+  { value: "sports", icon: "⚽" },
+  { value: "books", icon: "📚" },
+  { value: "food", icon: "🍎" },
+];
 
 
-const CategoryCard = ({ category, onEdit, onDelete, t }) => (
+const CategoryCard = ({ category, onEdit, onDelete, t }) => {
+  const typeIcon = CATEGORY_TYPES.find(ct => ct.value === category.categoryType)?.icon || "📦";
+  return (
   <Card className="overflow-hidden transition-all hover:shadow-lg">
     <div className="relative aspect-video">
-      <img
-        src={getImageUrl(category.image)}
-        alt={category.name}
-        className="h-full w-full object-cover"
-      />
+      {getImageUrl(category.image) ? (
+        <img
+          src={getImageUrl(category.image)}
+          alt={category.name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+          <span className="text-5xl">{typeIcon}</span>
+        </div>
+      )}
       <div className="absolute top-2 right-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -58,21 +80,23 @@ const CategoryCard = ({ category, onEdit, onDelete, t }) => (
       </div>
     </div>
     <CardContent className="p-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-1">
         <h3 className="text-lg font-semibold text-foreground">{category.name}</h3>
         <Badge variant={category.isActive ? "default" : "secondary"}>
           {category.isActive ? t("common.active") : t("common.inactive")}
         </Badge>
       </div>
-      <p className="text-sm text-muted-foreground mt-1">
-        {category.productCount || 0} {t("admin.products").toLowerCase()}
-      </p>
-      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+      {category.categoryType && category.categoryType !== 'other' && (
+        <p className="text-xs text-primary font-medium mb-1">
+          {typeIcon} {t(`categoryTypes.${category.categoryType}`) || category.categoryType}
+        </p>
+      )}
+      <p className="text-sm text-muted-foreground line-clamp-2">
         {category.description}
       </p>
     </CardContent>
   </Card>
-);
+);};
 
 const CategoryForm = ({
   isOpen,
@@ -89,6 +113,7 @@ const CategoryForm = ({
     image: "",
     isActive: true,
     parentId: null,
+    categoryType: "other",
   });
   const [imagePreview, setImagePreview] = useState("");
   const [file, setFile] = useState(null);
@@ -103,6 +128,7 @@ const CategoryForm = ({
         image: editingCategory.image || "",
         isActive: editingCategory.isActive ?? true,
         parentId: editingCategory.parentId || null,
+        categoryType: editingCategory.categoryType || "other",
       });
       setImagePreview(editingCategory.image || "");
     } else {
@@ -113,6 +139,7 @@ const CategoryForm = ({
         image: "",
         isActive: true,
         parentId: null,
+        categoryType: "other",
       });
       setImagePreview("");
       setFile(null);
@@ -162,6 +189,7 @@ const CategoryForm = ({
         .replace(/[^\w-]+/g, ""));
       dataToSend.append("description", formData.description || "");
       dataToSend.append("isActive", formData.isActive.toString());
+      dataToSend.append("categoryType", formData.categoryType || "other");
 
       if (file) {
         dataToSend.append("image", file);
@@ -211,6 +239,27 @@ const CategoryForm = ({
               }
               disabled={loading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="categoryType">{t("admin.categoryType")}</Label>
+            <Select
+              value={formData.categoryType || "other"}
+              onValueChange={(val) => setFormData((prev) => ({ ...prev, categoryType: val }))}
+              disabled={loading}
+            >
+              <SelectTrigger id="categoryType">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_TYPES.map((ct) => (
+                  <SelectItem key={ct.value} value={ct.value}>
+                    {ct.icon} {t(`categoryTypes.${ct.value}`) || ct.value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t("admin.categoryTypeDesc")}</p>
           </div>
 
           <div className="space-y-2">

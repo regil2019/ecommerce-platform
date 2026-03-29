@@ -114,6 +114,19 @@ const Product = db.define('Product', {
       }
       return [];
     }
+  },
+  sizes: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    get() {
+      const raw = this.getDataValue('sizes');
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string' && raw) {
+        try { return JSON.parse(raw); } catch (e) { return null; }
+      }
+      return null;
+    }
   }
 }, {
   tableName: 'products',

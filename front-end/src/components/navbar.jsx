@@ -89,6 +89,10 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
               {t('nav.products')}
             </Link>
 
+            <Link to="/categories" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
+              {t('nav.categories')}
+            </Link>
+
             <Link to="/about" className="text-foreground/80 hover:text-primary font-medium transition-colors duration-200">
               {t('nav.about')}
             </Link>
@@ -264,6 +268,15 @@ export default function NavBar({ searchTerm, setSearchTerm }) {
                     >
                       <Package size={22} className="text-muted-foreground group-hover:text-primary" />
                       {t('nav.products')}
+                    </Link>
+
+                    <Link
+                      to="/categories"
+                      className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-secondary text-foreground font-semibold transition-all group"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Search size={22} className="text-muted-foreground group-hover:text-primary" />
+                      {t('nav.categories')}
                     </Link>
 
                     <Link

@@ -60,11 +60,13 @@
         "errorNotFound": "Recurso não encontrado.",
         "errorValidation": "Solicitação inválida. Verifique seus dados.",
         "errorRateLimit": "Muitas solicitações. Aguarde e tente novamente.",
-        "errorServer": "Erro no servidor. Tente novamente mais tarde."
+        "errorServer": "Erro no servidor. Tente novamente mais tarde.",
+        "featureComingSoon": "Funcionalidade em breve!"
     },
     "nav": {
         "home": "Início",
         "products": "Produtos",
+        "categories": "Categorias",
         "about": "Sobre",
         "login": "Entrar",
         "register": "Cadastrar",
@@ -139,7 +141,13 @@
         "freeReturns": "Devoluções grátis em até 30 dias",
         "guarantee": "Garantia de qualidade",
         "secureDelivery": "Entrega segura",
-        "quantity": "Quantidade"
+        "quantity": "Quantidade",
+        "selectSize": "Selecione o tamanho",
+        "selectedSize": "Tamanho: {size}",
+        "noSizeAvailable": "Tamanho único",
+        "sizeRequired": "Por favor selecione um tamanho antes de adicionar ao carrinho",
+        "color": "Cor",
+        "selectColor": "Selecione a cor"
     },
     "cart": {
         "title": "Carrinho de Compras",
@@ -169,7 +177,8 @@
         "securePaymentDesc": "Seus dados estão protegidos",
         "expressDelivery": "Entrega Rápida",
         "expressDeliveryDesc": "Frete grátis acima de €100",
-        "processing": "Processando..."
+        "processing": "Processando...",
+        "size": "Tamanho: {size}"
     },
     "checkout": {
         "title": "Checkout",
@@ -438,7 +447,14 @@
         "descriptionGenerated": "Descrição gerada com sucesso!",
         "descriptionUpdated": "Descrição atualizada com sucesso!",
         "addProductsFirst": "Adicione produtos primeiro para gerar descrições com IA.",
-        "noProductsFound": "Nenhum produto encontrado"
+        "noProductsFound": "Nenhum produto encontrado",
+        "categoryType": "Tipo de Categoria",
+        "categoryTypeDesc": "Determina quais opções de tamanho aparecem para produtos nesta categoria",
+        "productSizes": "Tamanhos Disponíveis",
+        "productSizesDesc": "Selecione quais tamanhos estão disponíveis para este produto",
+        "editProductTitle": "Editar Produto",
+        "updateProduct": "Atualizar Produto",
+        "productUpdated": "Produto atualizado com sucesso"
     },
     "footer": {
         "rights": "© {year} Lumo. Todos os direitos reservados.",
@@ -459,8 +475,30 @@
         "newsletter": "Newsletter",
         "newsletterDesc": "Inscreva-se para ofertas exclusivas e atualizações.",
         "subscribe": "Inscrever",
+        "subscribed": "Inscrito!",
         "emailPlaceholder": "seu@email.com"
     },
+    "categoryTypes": {
+        "other": "Geral",
+        "clothing": "Roupas e Vestuário",
+        "shoes": "Calçados",
+        "accessories": "Acessórios",
+        "electronics": "Eletrônicos",
+        "home_decor": "Casa e Decoração",
+        "beauty": "Beleza e Cuidado Pessoal",
+        "sports": "Esportes e Lazer",
+        "books": "Livros e Mídia",
+        "food": "Alimentação e Bebidas"
+    },
+    "sizeOptions": {
+        "clothing": ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+        "shoes": ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"],
+        "accessories": ["Tamanho Único", "P/M", "M/G"],
+        "sports": ["XS", "S", "M", "L", "XL", "XXL"],
+        "other": []
+    },
+    "privacy": {"title": "Política de Privacidade", "lastUpdated": "Última atualização: Março 2026"},
+    "terms": {"title": "Termos de Serviço", "lastUpdated": "Última atualização: Março 2026"},
     "theme": {
         "light": "Claro",
         "dark": "Escuro",

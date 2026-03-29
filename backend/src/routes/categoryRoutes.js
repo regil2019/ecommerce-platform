@@ -51,7 +51,7 @@ const categoryValidations = [
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
-      attributes: ['id', 'name', 'slug', 'description', 'image'],
+      attributes: ['id', 'name', 'slug', 'description', 'image', 'categoryType'],
       order: [['name', 'ASC']]
     })
     res.json(categories)
@@ -69,7 +69,7 @@ router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidati
       return res.status(422).json({ errors: errors.array() })
     }
 
-    const { name, slug, description } = req.body
+    const { name, slug, description, categoryType } = req.body
 
     // Check if category exists
     const existingCategory = await Category.findOne({ where: { name: name.trim() } })
@@ -95,7 +95,8 @@ router.post('/', authenticate, isAdmin, upload.single('image'), categoryValidati
       name: name.trim(),
       slug: finalSlug,
       description: description || '',
-      image: imageUrl
+      image: imageUrl,
+      categoryType: categoryType || 'other'
     })
 
     res.status(201).json(category)
@@ -114,7 +115,7 @@ router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValida
       return res.status(422).json({ errors: errors.array() })
     }
 
-    const { name, slug, description } = req.body
+    const { name, slug, description, categoryType } = req.body
     const category = await Category.findByPk(id)
 
     if (!category) {
@@ -130,6 +131,10 @@ router.put('/:id', authenticate, isAdmin, upload.single('image'), categoryValida
       category.image = req.file.path // Cloudinary secure_url
     } else if (req.body.image !== undefined) {
       category.image = req.body.image // Update if provided string, or clear if empty string
+    }
+
+    if (categoryType !== undefined) {
+      category.categoryType = categoryType
     }
 
     await category.save()

@@ -24,6 +24,8 @@ import OrderCancel from './pages/public/OrderCancel';
 import Favorites from './pages/public/Favorites';
 import About from './pages/public/About';
 import PublicCategories from './pages/public/Categories';
+import Privacy from './pages/public/Privacy';
+import Terms from './pages/public/Terms';
 
 /* Admin pages */
 import AdminLayout from './components/admin/AdminLayout';
@@ -76,6 +78,8 @@ export default function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
 
                 {/* Admin */}
                 <Route

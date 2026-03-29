@@ -60,11 +60,13 @@
     "errorNotFound": "Resource not found.",
     "errorValidation": "Invalid request. Check your data.",
     "errorRateLimit": "Too many requests. Please wait and try again.",
-    "errorServer": "Server error. Please try again later."
+    "errorServer": "Server error. Please try again later.",
+    "featureComingSoon": "Feature coming soon!"
   },
   "nav": {
     "home": "Home",
     "products": "Products",
+    "categories": "Categories",
     "about": "About",
     "login": "Login",
     "register": "Register",
@@ -75,7 +77,7 @@
     "logout": "Logout",
     "cart": "Cart",
     "mobileMenu": "Navigation Menu",
-    "mobileMenuDesc": "Main navigation menu with links to different sections",
+    "mobileMenuDesc": "Main navigation menu",
     "myAccount": "My Account",
     "exitSystem": "Exit System"
   },
@@ -139,7 +141,13 @@
     "freeReturns": "Free returns within 30 days",
     "guarantee": "Quality guarantee",
     "secureDelivery": "Secure delivery",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "selectSize": "Select a size",
+    "selectedSize": "Size: {size}",
+    "noSizeAvailable": "One size fits all",
+    "sizeRequired": "Please select a size before adding to cart",
+    "color": "Color",
+    "selectColor": "Select Color"
   },
   "cart": {
     "title": "Shopping Cart",
@@ -169,7 +177,8 @@
     "securePaymentDesc": "Your data is protected",
     "expressDelivery": "Express Delivery",
     "expressDeliveryDesc": "Free shipping over €100",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "size": "Size: {size}"
   },
   "checkout": {
     "title": "Checkout",
@@ -187,7 +196,8 @@
     "currency": "Currency",
     "placeOrder": "Place Order",
     "orderPlaced": "Order placed successfully!",
-    "redirecting": "Redirecting to payment..."
+    "redirecting": "Redirecting to payment...",
+    "securePayment": "Secure Payment"
   },
   "auth": {
     "login": "Login",
@@ -301,7 +311,7 @@
     "title": "About Lumo",
     "subtitle": "Your premium e-commerce destination",
     "mission": "Our Mission",
-    "missionText": "We believe in providing exceptional quality products with an outstanding shopping experience. Lumo brings together the best brands and products, curated for you.",
+    "missionText": "We believe in providing exceptional quality products with an outstanding shopping experience.",
     "values": "Our Values",
     "quality": "Quality",
     "qualityDesc": "Every product in our catalog meets strict quality standards.",
@@ -312,6 +322,57 @@
     "contact": "Contact Us",
     "contactDesc": "Have questions? We'd love to hear from you.",
     "emailUs": "Email us at"
+  },
+  "categoryTypes": {
+    "other": "General",
+    "clothing": "Clothing & Apparel",
+    "shoes": "Shoes & Footwear",
+    "accessories": "Accessories",
+    "electronics": "Electronics",
+    "home_decor": "Home & Decor",
+    "beauty": "Beauty & Personal Care",
+    "sports": "Sports & Outdoors",
+    "books": "Books & Media",
+    "food": "Food & Beverages"
+  },
+  "sizeOptions": {
+    "clothing": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL",
+      "XXXL"
+    ],
+    "shoes": [
+      "35",
+      "36",
+      "37",
+      "38",
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46"
+    ],
+    "accessories": [
+      "One Size",
+      "S/M",
+      "M/L"
+    ],
+    "sports": [
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "other": []
   },
   "admin": {
     "dashboard": "Dashboard",
@@ -385,7 +446,7 @@
     "imagesSelected": "{count} image(s) selected",
     "imageTip": "Add at least 3-5 high-quality images showing different angles of the product.",
     "createProduct": "Create Product",
-    "createCategory": "Create Categories",
+    "createCategory": "Create Category",
     "noCategories": "No categories found.",
     "description": "Description",
     "virtualStore": "Virtual Store",
@@ -426,7 +487,7 @@
     "orderCancelledDesc": "This order has been cancelled and cannot be processed.",
     "aiDescriptions": "AI Description Generator",
     "aboutFeature": "About this feature:",
-    "aiFeature1": "Uses AI (DeepSeek) to generate SEO-optimized descriptions",
+    "aiFeature1": "Uses AI to generate SEO-optimized descriptions",
     "aiFeature2": "Analyzes price, category and product features",
     "aiFeature3": "Creates persuasive descriptions that boost conversions",
     "aiFeature4": "Only administrators can generate and update descriptions",
@@ -438,7 +499,14 @@
     "descriptionGenerated": "Description generated successfully!",
     "descriptionUpdated": "Description updated successfully!",
     "addProductsFirst": "Add products first to generate AI descriptions.",
-    "noProductsFound": "No products found"
+    "noProductsFound": "No products found",
+    "categoryType": "Category Type",
+    "categoryTypeDesc": "Determines what size options show for products in this category",
+    "productSizes": "Available Sizes",
+    "productSizesDesc": "Select which sizes are available for this product",
+    "editProductTitle": "Edit Product",
+    "updateProduct": "Update Product",
+    "productUpdated": "Product updated successfully"
   },
   "footer": {
     "rights": "© {year} Lumo. All rights reserved.",
@@ -459,7 +527,16 @@
     "newsletter": "Newsletter",
     "newsletterDesc": "Subscribe for exclusive offers and updates.",
     "subscribe": "Subscribe",
+    "subscribed": "Subscribed!",
     "emailPlaceholder": "your@email.com"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: March 2026"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: March 2026"
   },
   "theme": {
     "light": "Light",

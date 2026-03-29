@@ -125,7 +125,7 @@ const Products = ({ searchTerm }) => {
   const hasFilters = selectedCategory || sortOrder || searchTerm;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pt-20 animate-in fade-in duration-500">
+    <div className="flex min-h-screen flex-col bg-background animate-in fade-in duration-500">
       <main className="container mx-auto flex-grow px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Sidebar */}

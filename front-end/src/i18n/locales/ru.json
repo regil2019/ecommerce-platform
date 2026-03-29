@@ -60,11 +60,13 @@
         "errorNotFound": "Ресурс не найден.",
         "errorValidation": "Неверный запрос. Проверьте данные.",
         "errorRateLimit": "Слишком много запросов. Подождите и попробуйте снова.",
-        "errorServer": "Ошибка сервера. Попробуйте позже."
+        "errorServer": "Ошибка сервера. Попробуйте позже.",
+        "featureComingSoon": "Скоро будет!"
     },
     "nav": {
         "home": "Главная",
         "products": "Товары",
+        "categories": "Категории",
         "about": "О нас",
         "login": "Вход",
         "register": "Регистрация",
@@ -139,7 +141,13 @@
         "freeReturns": "Бесплатный возврат в течение 30 дней",
         "guarantee": "Гарантия качества",
         "secureDelivery": "Безопасная доставка",
-        "quantity": "Количество"
+        "quantity": "Количество",
+        "selectSize": "Выберите размер",
+        "selectedSize": "Размер: {size}",
+        "noSizeAvailable": "Один размер",
+        "sizeRequired": "Пожалуйста, выберите размер перед добавлением в корзину",
+        "color": "Цвет",
+        "selectColor": "Выберите цвет"
     },
     "cart": {
         "title": "Корзина",
@@ -169,7 +177,8 @@
         "securePaymentDesc": "Ваши данные защищены",
         "expressDelivery": "Быстрая доставка",
         "expressDeliveryDesc": "Бесплатная доставка от €100",
-        "processing": "Обработка..."
+        "processing": "Обработка...",
+        "size": "Размер: {size}"
     },
     "checkout": {
         "title": "Оформление заказа",
@@ -438,7 +447,14 @@
         "descriptionGenerated": "Описание успешно сгенерировано!",
         "descriptionUpdated": "Описание обновлено!",
         "addProductsFirst": "Сначала добавьте товары для генерации описаний ИИ.",
-        "noProductsFound": "Товары не найдены"
+        "noProductsFound": "Товары не найдены",
+        "categoryType": "Тип категории",
+        "categoryTypeDesc": "Определяет варианты размеров для товаров в этой категории",
+        "productSizes": "Доступные размеры",
+        "productSizesDesc": "Выберите доступные размеры для этого товара",
+        "editProductTitle": "Редактировать товар",
+        "updateProduct": "Обновить товар",
+        "productUpdated": "Товар успешно обновлён"
     },
     "footer": {
         "rights": "© {year} Lumo. Все права защищены.",
@@ -459,8 +475,30 @@
         "newsletter": "Рассылка",
         "newsletterDesc": "Подпишитесь на эксклюзивные предложения и обновления.",
         "subscribe": "Подписаться",
+        "subscribed": "Подписано!",
         "emailPlaceholder": "ваш@email.com"
     },
+    "categoryTypes": {
+        "other": "Общее",
+        "clothing": "Одежда",
+        "shoes": "Обувь",
+        "accessories": "Аксессуары",
+        "electronics": "Электроника",
+        "home_decor": "Дом и декор",
+        "beauty": "Красота и уход",
+        "sports": "Спорт и отдых",
+        "books": "Книги и медиа",
+        "food": "Еда и напитки"
+    },
+    "sizeOptions": {
+        "clothing": ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+        "shoes": ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"],
+        "accessories": ["Один размер", "S/M", "M/L"],
+        "sports": ["XS", "S", "M", "L", "XL", "XXL"],
+        "other": []
+    },
+    "privacy": {"title": "Политика конфиденциальности", "lastUpdated": "Последнее обновление: Март 2026"},
+    "terms": {"title": "Условия использования", "lastUpdated": "Последнее обновление: Март 2026"},
     "theme": {
         "light": "Светлая",
         "dark": "Тёмная",

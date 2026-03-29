@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { LumoLogo } from './LumoLogo';
-
 import { SubscribeButton } from './magicui/SubscribeButton';
 
 export default function Footer() {
@@ -58,10 +57,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <span className="text-muted-foreground">{t('footer.shippingInfo')}</span>
+                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t('footer.shippingInfo')}
+                </Link>
               </li>
               <li>
-                <span className="text-muted-foreground">{t('footer.returns')}</span>
+                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t('footer.returns')}
+                </Link>
               </li>
             </ul>
           </div>
@@ -76,10 +79,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <span className="text-muted-foreground">{t('footer.privacy')}</span>
+                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t('footer.privacy')}
+                </Link>
               </li>
               <li>
-                <span className="text-muted-foreground">{t('footer.terms')}</span>
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+                  {t('footer.terms')}
+                </Link>
               </li>
             </ul>
           </div>

@@ -8,11 +8,12 @@ import FavoriteButton from "../../components/FavoriteButton";
 import SimilarProducts from "../../components/SimilarProducts";
 import { getProductReviews } from "../../services/reviewApi";
 import { formatCurrency } from "../../lib/utils";
-import { Star, Truck, Shield, RotateCcw } from "lucide-react";
+import { Star, Truck, Shield, RotateCcw, AlertCircle } from "lucide-react";
 import { useI18n } from "../../i18n";
 import { StickyAddToCart } from "../../components/StickyAddToCart";
 import { RainbowButton } from "../../components/magicui/RainbowButton";
 import { Button } from "../../components/ui/Button";
+import { toast } from "react-toastify";
 
 export default function ProductDetail() {
   const { t } = useI18n();
@@ -21,6 +22,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reviews, setReviews] = useState([]);
@@ -79,14 +81,19 @@ export default function ProductDetail() {
     };
   }, [loading, product]);
 
-
   const handleReviewSubmitted = (newReview) => {
     setReviews((prevReviews) => [newReview, ...prevReviews]);
   };
 
+  const hasSizes = product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
+
   const handleAddToCart = () => {
+    if (hasSizes && !selectedSize) {
+      toast.error(t("product.sizeRequired"));
+      return;
+    }
     if (product && quantity > 0) {
-      addToCart({ ...product, quantity });
+      addToCart({ ...product, quantity, selectedSize });
     }
   };
 
@@ -193,11 +200,45 @@ export default function ProductDetail() {
             </div>
           </div>
 
-
           {/* Description */}
           <div className="prose prose-neutral dark:prose-invert max-w-none">
             <p className="leading-relaxed text-muted-foreground text-base sm:text-lg">{product.description}</p>
           </div>
+
+          {/* Size Selector */}
+          {hasSizes && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-foreground">
+                  {t("product.selectSize")}
+                  {selectedSize && (
+                    <span className="ml-2 text-primary font-bold">{selectedSize}</span>
+                  )}
+                </label>
+                {!selectedSize && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {t("product.sizeRequired")}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                    className={`min-w-[3rem] px-3 py-2 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
+                      selectedSize === size
+                        ? "border-primary bg-primary text-primary-foreground shadow-md scale-105"
+                        : "border-border bg-background text-foreground hover:border-primary/60 hover:bg-accent"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quantity & Buttons */}
           <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">

@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { useI18n } from '../../i18n';
 import { Skeleton } from '../../components/ui/skeleton';
 import { getImageUrl } from '../../lib/utils';
+import { ArrowRight, Tag } from 'lucide-react';
 
 
 const Categories = () => {
@@ -43,7 +44,10 @@ const Categories = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 min-h-screen">
-            <h1 className="text-3xl font-bold mb-8">{t('home.categories')}</h1>
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('home.categories')}</h1>
+                <p className="text-muted-foreground mt-2">{t('home.categoriesDesc')}</p>
+            </div>
 
             {loading ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -64,27 +68,34 @@ const Categories = () => {
                         <Link
                             to={`/products?category=${encodeURIComponent(category.name)}`}
                             key={category.id}
-                            className="group block space-y-3"
+                            className="group block rounded-2xl overflow-hidden border border-border/50 bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                         >
-                            <div className="overflow-hidden rounded-xl bg-muted aspect-square relative">
+                            <div className="overflow-hidden bg-muted aspect-[4/3] relative">
                                 {category.image ? (
                                     <img
                                         src={getImageUrl(category.image)}
                                         alt={category.name}
-                                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
+                                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-                                        <span className="text-2xl font-bold opacity-30">{category.name?.[0] || '?'}</span>
+                                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                                        <Tag className="h-12 w-12 text-primary/30" />
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-white font-medium px-4 py-2 bg-black/50 rounded-full backdrop-blur-sm">Ver Produtos</span>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                                    <span className="text-white text-sm font-semibold px-4 py-1.5 bg-white/20 rounded-full backdrop-blur-sm flex items-center gap-1.5">
+                                        {t('home.viewAll')} <ArrowRight className="h-3.5 w-3.5" />
+                                    </span>
                                 </div>
                             </div>
-                            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors text-center">
-                                {category.name}
-                            </h3>
+                            <div className="p-4">
+                                <h3 className="font-semibold text-base group-hover:text-primary transition-colors text-foreground line-clamp-1">
+                                    {category.name}
+                                </h3>
+                                {category.description && (
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{category.description}</p>
+                                )}
+                            </div>
                         </Link>
                     ))}
                 </div>

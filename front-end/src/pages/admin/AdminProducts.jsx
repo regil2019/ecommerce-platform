@@ -60,6 +60,7 @@ export default function AdminProducts() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const navigate = useNavigate();
 
   const safeProducts = products ?? [];
@@ -217,10 +218,8 @@ export default function AdminProducts() {
                                 <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    alert(t("common.featureComingSoon") || "Edit feature coming soon!");
-                                    // Future: open modal in edit mode
-                                    // setEditingProduct(product);
-                                    // setIsProductModalOpen(true);
+                                    setEditingProduct(product);
+                                    setIsProductModalOpen(true);
                                   }}
                                 >
                                   {t("common.edit")}
@@ -291,11 +290,14 @@ export default function AdminProducts() {
         <>
           <div
             className="fixed inset-0 z-[10001] bg-black/20 backdrop-blur-sm"
-            onClick={() => setIsProductModalOpen(false)}
+            onClick={() => { setIsProductModalOpen(false); setEditingProduct(null); }}
           />
           <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
-            <div className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-border bg-card shadow-xl">
-              <ProductNew onClose={() => setIsProductModalOpen(false)} />
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-border bg-card shadow-xl">
+              <ProductNew
+                onClose={() => { setIsProductModalOpen(false); setEditingProduct(null); loadProducts(); }}
+                editingProduct={editingProduct}
+              />
             </div>
           </div>
         </>

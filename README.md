@@ -110,7 +110,7 @@ cd front-end && pnpm install && pnpm run dev
 ```
 
 **External Services:**
-- **Cloudinary** — Image storage & CDN delivery
+- **Cloudinary** — Image storage 
 - **Stripe** — Payment processing & webhooks
 - **EmailJS** — Transactional emails
 - **DeepSeek AI** — Product recommendation engine
