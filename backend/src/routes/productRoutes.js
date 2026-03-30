@@ -118,6 +118,7 @@ router.post(
       const main_image = images.length > 0 ? images[0] : null
 
       const product = await Product.create({ ...productData, images, main_image, categoryId })
+      cacheService.clear()
       res.status(201).json(product)
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -234,6 +235,7 @@ router.put(
       const main_image = images.length > 0 ? images[0] : product.main_image
 
       await product.update({ ...productData, images, main_image, categoryId })
+      cacheService.clear()
       res.json(product)
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -312,6 +314,7 @@ router.delete('/:id', authenticate, isAdmin, async (req, res, next) => {
     }
 
     await product.destroy()
+    cacheService.clear()
     res.status(204).end()
   } catch (error) {
     next(error)
@@ -429,9 +432,6 @@ router.get('/', optionalAuthenticate, productsLimiter, async (req, res, next) =>
       order.push(['id', 'DESC'])
     }
 
-    const timerKey = `products_query_${Date.now()}`
-    console.time(timerKey)
-
     // --- Cache Lookup ---
     const cacheKey = `products_${JSON.stringify(req.query)}`
     const cachedData = cacheService.get(cacheKey)
@@ -482,8 +482,6 @@ router.get('/', optionalAuthenticate, productsLimiter, async (req, res, next) =>
         product.isFavorite = false
       })
     }
-
-    console.timeEnd(timerKey)
 
     res.json({
       products: rows,

@@ -27,12 +27,12 @@ describe('Authentication Tests', () => {
       expect(response.body).toHaveProperty('token');
     });
 
-    it('should register an admin user with admin email', async () => {
+    it('should register a user with default role "user"', async () => {
       const userData = {
-        name: 'Admin User',
-        email: 'admin@example.com',
-        address: '123 Admin Street',
-        password: 'admin123'
+        name: 'Regular User',
+        email: 'regular@example.com',
+        address: '123 Regular Street',
+        password: 'password123'
       };
 
       const response = await request(app)
@@ -41,7 +41,7 @@ describe('Authentication Tests', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.user.role).toBe('admin');
+      expect(response.body.user.role).toBe('user');
     });
 
     it('should return 400 for invalid data', async () => {

@@ -427,7 +427,7 @@ router.get('/orders', authenticate, isAdmin, async (req, res, next) => {
 router.put('/orders/:id/status', authenticate, isAdmin, async (req, res, next) => {
   try {
     const { status } = req.body
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed']
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Status inválido' })

@@ -6,24 +6,31 @@ import behaviorService from '../services/behaviorService.js'
 
 const router = express.Router()
 
-// Add item to cart (authenticated)
+// Add item to cart (authenticated) — upsert: increment if exists, create if not
 router.post('/', authenticate, async (req, res) => {
   try {
     const { productId, quantity = 1 } = req.body
+    if (!productId) {
+      return res.status(400).json({ error: 'productId is required' })
+    }
     if (!quantity || quantity < 1) {
       return res.status(400).json({ error: 'Invalid quantity' })
     }
 
-    const cartItem = await Cart.create({
-      userId: req.user.id,
-      productId,
-      quantity
+    const [cartItem, created] = await Cart.findOrCreate({
+      where: { userId: req.user.id, productId },
+      defaults: { userId: req.user.id, productId, quantity }
     })
+
+    if (!created) {
+      cartItem.quantity += quantity
+      await cartItem.save()
+    }
 
     // Track cart add behavior
     await behaviorService.trackCartAdd(req.user.id, productId, quantity)
 
-    res.status(201).json(cartItem)
+    res.status(created ? 201 : 200).json(cartItem)
   } catch (error) {
     console.error('Cart add error:', error)
     res.status(500).json({ error: 'Error adding item to cart' })

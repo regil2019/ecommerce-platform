@@ -45,5 +45,15 @@ const recommendationsLimiter = rateLimit({
   legacyHeaders: false
 })
 
-export { limiter, favoritesLimiter, productsLimiter, categoriesLimiter, recommendationsLimiter }
+// Strict limiter for auth endpoints (login/register) — prevents brute-force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 20 : 200,
+  message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Only count failed attempts
+})
+
+export { limiter, favoritesLimiter, productsLimiter, categoriesLimiter, recommendationsLimiter, authLimiter }
 export default limiter

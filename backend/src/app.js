@@ -8,8 +8,8 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION] thrown:', err);
-  // Mandatory: restart is usually required after uncaughtException
-  // process.exit(1); 
+  // Mandatory: process is in undefined state after uncaughtException — must restart
+  process.exit(1);
 });
 
 import express from "express";
@@ -52,6 +52,7 @@ const app = express();
 ========================= */
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
   "http://localhost:3000",
   "http://localhost:5173",
   "https://ecommerce-platform-drab.vercel.app"
@@ -63,11 +64,10 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
 
-      // Check if origin is a Vercel deployment OR explicitly allowed
-      const isVercel = origin.endsWith('.vercel.app');
-      const isAllowed = allowedOrigins.some(ao => origin === ao || (typeof ao === 'string' && origin.startsWith(ao)));
+      // Only allow explicitly listed origins — no wildcard *.vercel.app
+      const isAllowed = allowedOrigins.some(ao => origin === ao);
 
-      if (isVercel || isAllowed) {
+      if (isAllowed) {
         return callback(null, true);
       }
 

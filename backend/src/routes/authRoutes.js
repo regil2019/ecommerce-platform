@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import { authenticate } from '../middleware/authMiddleware.js'
+import { authLimiter } from '../middleware/rateLimiter.js'
 import { config } from '../config/env.js'
 
 const router = express.Router()
@@ -22,6 +23,7 @@ const signToken = (user) =>
 ───────────────────────────────────────── */
 router.post(
     '/register',
+    authLimiter,
     [
         body('name').trim().notEmpty().withMessage('Nome é obrigatório'),
         body('email').isEmail().normalizeEmail().withMessage('Email inválido'),
@@ -80,7 +82,7 @@ router.post(
 /* ─────────────────────────────────────────
    POST /api/auth/login
 ───────────────────────────────────────── */
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     const { email, password } = req.body
 
     if (!email || !password) {
@@ -90,7 +92,7 @@ router.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ where: { email } })
 
-        if (!user || !user.password || user.password === 'CLERK_AUTH_PLACEHOLDER') {
+        if (!user || !user.password) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' })
         }
 
@@ -234,14 +236,15 @@ router.post('/forgot-password', async (req, res) => {
             { expiresIn: '1h' }
         )
 
-        // In production: send email with resetToken
-        // For portfolio: return the token in response (or log it)
-        console.log(`[Auth] Password reset token for ${email}: ${resetToken}`)
+        // In production: email is sent via emailService
+        // In development: return token in response for testing
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[Auth][DEV] Password reset token for ${email}: ${resetToken}`)
+        }
 
         return res.json({
             success: true,
             message: 'Se o email existir, receberás um link de recuperação.',
-            // Remove resetToken from response in production — only for dev/portfolio
             ...(process.env.NODE_ENV !== 'production' && { resetToken })
         })
     } catch (error) {

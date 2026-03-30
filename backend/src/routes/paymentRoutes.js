@@ -23,7 +23,7 @@ const stripe = (stripeKey && typeof stripeKey === 'string' && stripeKey.startsWi
 router.post('/create-checkout-session', authenticate, async (req, res, next) => {
   if (!stripe) {
     logger.error('Stripe client not initialized (missing or invalid STRIPE_SECRET_KEY)')
-    return res.status(500).json({ error: t('payment.configError') || 'Payment configuration error' })
+    return res.status(500).json({ error: 'Payment configuration error' })
   }
   
   if (!config.frontendUrl) {
@@ -161,7 +161,7 @@ router.post('/create-checkout-session', authenticate, async (req, res, next) => 
   }
 })
 
-router.post('/webhook', async (req, res) => {
+router.post('/webhook', async (req, res, next) => {
   const sig = req.headers['stripe-signature']
   let event
 
@@ -182,7 +182,7 @@ router.post('/webhook', async (req, res) => {
 
         if (orderId) {
           const order = await Order.findByPk(orderId, { transaction })
-          if (order) {
+          if (order && order.paymentStatus !== 'paid') {
             await order.update({
               status: 'completed',
               paymentStatus: 'paid'
