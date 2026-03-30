@@ -90,16 +90,17 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (hasSizes && !selectedSize) {
       toast.error(t("product.sizeRequired"));
-      return;
+      return false;
     }
     if (product && quantity > 0) {
       addToCart({ ...product, quantity, selectedSize });
     }
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    navigate("/cart");
+    const added = handleAddToCart();
+    if (added) navigate("/cart");
   };
 
   const averageRating =

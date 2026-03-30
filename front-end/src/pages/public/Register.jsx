@@ -4,10 +4,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { MagicCard } from '../../components/magicui/MagicCard';
 import { ShimmerButton } from '../../components/magicui/ShimmerButton';
 import { toast } from 'react-toastify';
+import { useI18n } from '../../i18n';
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -15,13 +17,13 @@ const Register = () => {
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'Nome é obrigatório';
-    if (!form.email) errs.email = 'Email é obrigatório';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Email inválido';
-    if (!form.password) errs.password = 'Password é obrigatória';
-    else if (form.password.length < 6) errs.password = 'Mínimo 6 caracteres';
-    if (!form.confirm) errs.confirm = 'Por favor confirma a password';
-    else if (form.password !== form.confirm) errs.confirm = 'As passwords não coincidem';
+    if (!form.name.trim()) errs.name = t('auth.nameRequired');
+    if (!form.email) errs.email = t('auth.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t('auth.invalidEmail');
+    if (!form.password) errs.password = t('auth.passwordRequired');
+    else if (form.password.length < 6) errs.password = t('auth.passwordMinLength');
+    if (!form.confirm) errs.confirm = t('auth.confirmPasswordRequired');
+    else if (form.password !== form.confirm) errs.confirm = t('auth.passwordMismatch');
     return errs;
   };
 
@@ -38,10 +40,10 @@ const Register = () => {
     setLoading(true);
     try {
       await register({ name: form.name, email: form.email, password: form.password });
-      toast.success('Conta criada com sucesso! 🎉');
+      toast.success(t('auth.registerSuccess'));
       navigate('/');
     } catch (error) {
-      toast.error(error.message || 'Erro ao criar conta');
+      toast.error(error.message || t('auth.registerErrorMsg'));
     } finally {
       setLoading(false);
     }
@@ -73,8 +75,8 @@ const Register = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Criar conta</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Junte-se a nós, é grátis e rápido</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('auth.createAccount')}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t('auth.registerSubtitle')}</p>
         </div>
 
         {/* Card */}
@@ -87,7 +89,7 @@ const Register = () => {
 
             {/* Name */}
             <div className="space-y-1.5">
-              <label htmlFor="reg-name" className="block text-sm font-medium text-foreground">Nome completo</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-foreground">{t('auth.fullName')}</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
                   <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,7 +102,7 @@ const Register = () => {
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  placeholder="João Silva"
+                  placeholder={t('auth.namePlaceholder')}
                   autoComplete="name"
                   className={`w-full rounded-xl border bg-muted/30 py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50
@@ -126,7 +128,7 @@ const Register = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="ti@exemplo.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   autoComplete="email"
                   className={`w-full rounded-xl border bg-muted/30 py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50
@@ -139,7 +141,7 @@ const Register = () => {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="reg-password" className="block text-sm font-medium text-foreground">Password</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-foreground">{t('auth.password')}</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
                   <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,7 +154,7 @@ const Register = () => {
                   name="password"
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={t('auth.passwordMinPlaceholder')}
                   autoComplete="new-password"
                   className={`w-full rounded-xl border bg-muted/30 py-3 pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50
@@ -198,7 +200,7 @@ const Register = () => {
 
             {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label htmlFor="reg-confirm" className="block text-sm font-medium text-foreground">Confirmar password</label>
+              <label htmlFor="reg-confirm" className="block text-sm font-medium text-foreground">{t('auth.confirmPassword')}</label>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
                   <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +213,7 @@ const Register = () => {
                   name="confirm"
                   value={form.confirm}
                   onChange={handleChange}
-                  placeholder="Repete a password"
+                  placeholder={t('auth.confirmPasswordPlaceholder')}
                   autoComplete="new-password"
                   className={`w-full rounded-xl border bg-muted/30 py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50
@@ -243,9 +245,9 @@ const Register = () => {
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
                     <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  A criar conta…
+                  {t('auth.creatingAccount')}
                 </span>
-              ) : 'Criar conta'}
+              ) : t('auth.createAccount')}
             </ShimmerButton>
 
           </form>
@@ -257,14 +259,14 @@ const Register = () => {
                 <div className="w-full border-t border-border/40" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-card px-3 text-xs text-muted-foreground">Já tens conta?</span>
+                <span className="bg-card px-3 text-xs text-muted-foreground">{t('auth.alreadyHaveAccount')}</span>
               </div>
             </div>
             <Link
               to="/login"
               className="mt-4 block w-full rounded-xl border border-border/50 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 hover:border-border transition-all duration-200"
             >
-              Entrar na minha conta
+              {t('auth.goToLogin')}
             </Link>
           </div>
         </MagicCard>

@@ -4,10 +4,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { MagicCard } from '../../components/magicui/MagicCard';
 import { ShimmerButton } from '../../components/magicui/ShimmerButton';
 import { toast } from 'react-toastify';
+import { useI18n } from '../../i18n';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useI18n();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -15,9 +17,9 @@ const Login = () => {
 
   const validate = () => {
     const errs = {};
-    if (!form.email) errs.email = 'Email é obrigatório';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Email inválido';
-    if (!form.password) errs.password = 'Password é obrigatória';
+    if (!form.email) errs.email = t('auth.emailRequired');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = t('auth.invalidEmail');
+    if (!form.password) errs.password = t('auth.passwordRequired');
     return errs;
   };
 
@@ -34,10 +36,10 @@ const Login = () => {
     setLoading(true);
     try {
       await login(form);
-      toast.success('Bem-vindo de volta! 👋');
+      toast.success(t('auth.welcomeBackToast'));
       navigate('/');
     } catch (error) {
-      toast.error(error.message || 'Credenciais inválidas');
+      toast.error(error.message || t('auth.invalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -70,8 +72,8 @@ const Login = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Bem-vindo de volta</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Entra na tua conta para continuar</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">{t('auth.welcomeBack')}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t('auth.loginSubtitle')}</p>
         </div>
 
         {/* Card */}
@@ -99,7 +101,7 @@ const Login = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="ti@exemplo.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   autoComplete="email"
                   className={`w-full rounded-xl border bg-muted/30 py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 transition-all duration-200
                     focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50
@@ -125,7 +127,7 @@ const Login = () => {
                   to="/forgot-password"
                   className="text-xs text-blue-500 hover:text-blue-400 transition-colors"
                 >
-                  Esqueceu a password?
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
               <div className="relative">
@@ -187,9 +189,9 @@ const Login = () => {
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
                     <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  A entrar…
+                  {t('auth.signingIn')}
                 </span>
-              ) : 'Entrar'}
+              ) : t('auth.signIn')}
             </ShimmerButton>
 
           </form>
@@ -201,14 +203,14 @@ const Login = () => {
                 <div className="w-full border-t border-border/40" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-card px-3 text-xs text-muted-foreground">Ainda não tens conta?</span>
+                <span className="bg-card px-3 text-xs text-muted-foreground">{t('auth.noAccountQuestion')}</span>
               </div>
             </div>
             <Link
               to="/register"
               className="mt-4 block w-full rounded-xl border border-border/50 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 hover:border-border transition-all duration-200"
             >
-              Criar conta grátis
+              {t('auth.createFreeAccount')}
             </Link>
           </div>
         </MagicCard>
