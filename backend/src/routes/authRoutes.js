@@ -11,8 +11,8 @@ const router = express.Router()
 const JWT_SECRET = config.jwtSecret
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 
-// Admin emails that get auto-promoted
-const ADMIN_EMAILS = ['danielnunda@gmail.com', 'admin@regil.com']
+// Admin emails that get auto-promoted — configure via ADMIN_EMAILS env var (comma-separated)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
 
 const signToken = (user) =>
     jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
