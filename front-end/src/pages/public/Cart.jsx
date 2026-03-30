@@ -152,12 +152,22 @@ export default function Cart() {
                     <span className="text-muted-foreground">{t('cart.taxes')}</span>
                     <span className="font-medium text-foreground">{formatCurrency(tax)}</span>
                   </div>
-                  {subtotal < 100 && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 dark:bg-primary/10">
-                      <p className="text-xs text-primary">
+                  {subtotal < 100 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-primary font-medium">
                         {t('cart.freeShippingThreshold', { amount: formatCurrency(100 - subtotal) })}
                       </p>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-700"
+                          style={{ width: `${Math.min((subtotal / 100) * 100, 100)}%` }}
+                        />
+                      </div>
                     </div>
+                  ) : (
+                    <p className="text-xs text-green-600 dark:text-green-400 font-semibold flex items-center gap-1">
+                      🎉 {t('cart.freeShipping')}!
+                    </p>
                   )}
                 </div>
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"; // Force Rebuild
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 import { formatCurrency, getImageUrl } from "../lib/utils";
 import useCart from "../hooks/useCart";
 import { useI18n } from "../i18n";
@@ -46,7 +46,7 @@ const ProductCard = ({ product }) => {
       />
 
       <div className="relative aspect-square overflow-hidden bg-white/50 dark:bg-black/20">
-        <Carousel className="h-full w-full">
+        <Carousel className={`h-full w-full ${isOutOfStock ? 'grayscale opacity-70' : ''}`}>
           <CarouselContent>
             {images.map((img, idx) => (
               <CarouselItem key={idx}>
@@ -66,6 +66,13 @@ const ProductCard = ({ product }) => {
             </>
           )}
         </Carousel>
+        {isOutOfStock && (
+          <div className="absolute inset-0 z-15 flex items-center justify-center bg-black/30">
+            <span className="rounded-full bg-background/90 px-3 py-1 text-xs font-bold text-foreground shadow">
+              {t('product.outOfStock')}
+            </span>
+          </div>
+        )}
         <div className="absolute top-3 right-3 z-20">
           <FavoriteButton productId={product.id} initialIsFavorite={product.isFavorite} />
         </div>
@@ -83,6 +90,18 @@ const ProductCard = ({ product }) => {
         <h3 className="mb-1 flex-1 font-semibold leading-tight text-xs sm:text-sm text-foreground line-clamp-2">
           {product.name}
         </h3>
+        {product.averageRating > 0 && (
+          <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center">
+              {[1,2,3,4,5].map(s => (
+                <Star key={s} className={`h-3 w-3 ${s <= Math.round(product.averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`} />
+              ))}
+            </div>
+            {product.reviewCount > 0 && (
+              <span className="text-[10px] text-muted-foreground">({product.reviewCount})</span>
+            )}
+          </div>
+        )}
         <p className="mb-2 text-sm sm:text-base font-bold text-primary">
           {formatCurrency(product.price)}
         </p>

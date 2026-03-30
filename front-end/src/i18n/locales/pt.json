@@ -147,7 +147,10 @@
         "noSizeAvailable": "Tamanho único",
         "sizeRequired": "Por favor selecione um tamanho antes de adicionar ao carrinho",
         "color": "Cor",
-        "selectColor": "Selecione a cor"
+        "selectColor": "Selecione a cor",
+        "recentlyViewed": "Vistos Recentemente",
+        "shareProduct": "Partilhar",
+        "linkCopied": "Link copiado!"
     },
     "cart": {
         "title": "Carrinho de Compras",

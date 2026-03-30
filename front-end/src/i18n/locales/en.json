@@ -147,7 +147,10 @@
     "noSizeAvailable": "One size fits all",
     "sizeRequired": "Please select a size before adding to cart",
     "color": "Color",
-    "selectColor": "Select Color"
+    "selectColor": "Select Color",
+    "recentlyViewed": "Recently Viewed",
+    "shareProduct": "Share",
+    "linkCopied": "Link copied!"
   },
   "cart": {
     "title": "Shopping Cart",

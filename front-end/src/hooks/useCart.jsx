@@ -6,6 +6,7 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const { user } = useAuth();
 
     // Load cart items from backend when user logs in
@@ -62,6 +63,7 @@ export function CartProvider({ children }) {
                 }
                 return [...prevItems, { ...product, quantity: 1 }];
             });
+            setIsDrawerOpen(true);
             return;
         }
 
@@ -74,6 +76,7 @@ export function CartProvider({ children }) {
 
             // Reload cart to get updated items
             await loadCartFromBackend();
+            setIsDrawerOpen(true);
         } catch (error) {
             console.error('Error adding to cart:', error);
             // Fallback to local state
@@ -87,6 +90,7 @@ export function CartProvider({ children }) {
                 }
                 return [...prevItems, { ...product, quantity: 1 }];
             });
+            setIsDrawerOpen(true);
         }
     };
 
@@ -177,7 +181,9 @@ export function CartProvider({ children }) {
                 updateQuantity,
                 clearCart,
                 total,
-                loading
+                loading,
+                isDrawerOpen,
+                setIsDrawerOpen
             }}
         >
             {children}

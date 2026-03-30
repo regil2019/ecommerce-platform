@@ -147,7 +147,10 @@
         "noSizeAvailable": "Один размер",
         "sizeRequired": "Пожалуйста, выберите размер перед добавлением в корзину",
         "color": "Цвет",
-        "selectColor": "Выберите цвет"
+        "selectColor": "Выберите цвет",
+        "recentlyViewed": "Недавно просмотренные",
+        "shareProduct": "Поделиться",
+        "linkCopied": "Ссылка скопирована!"
     },
     "cart": {
         "title": "Корзина",

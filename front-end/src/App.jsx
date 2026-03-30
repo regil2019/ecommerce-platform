@@ -1,46 +1,52 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
 import { FloatingDock } from './components/FloatingDock';
-
 import NavBar from './components/navbar';
 import Footer from './components/Footer';
-
-/* Public pages */
-import Home from './pages/public/Home';
-import Products from './pages/public/Products';
-import ProductDetail from './pages/public/ProductDetail';
-import Cart from './pages/public/Cart';
-import Checkout from './pages/public/Checkout';
-import Login from './pages/public/Login';
-import Register from './pages/public/Register';
-import ForgotPassword from './pages/public/ForgotPassword';
-import ResetPassword from './pages/public/ResetPassword';
-import UserProfile from './pages/public/UserProfile';
-import OrderHistory from './pages/public/OrderHistory';
-import OrderSuccess from './pages/public/OrderSuccess';
-import OrderCancel from './pages/public/OrderCancel';
-import Favorites from './pages/public/Favorites';
-import About from './pages/public/About';
-import PublicCategories from './pages/public/Categories';
-import Privacy from './pages/public/Privacy';
-import Terms from './pages/public/Terms';
-
-/* Admin pages */
-import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminProducts from './pages/admin/AdminProducts';
-import ProductNew from './pages/admin/ProductNew';
-import AdminOrders from './pages/admin/Orders';
-import OrderDetail from './pages/admin/OrderDetail';
-import Users from './pages/admin/Users';
-import Categories from './pages/admin/Categories';
+import CartDrawer from './components/CartDrawer';
 import AdminRoute from './components/admin/AdminRoute';
-
-/* Providers */
 import { CartProvider } from './hooks/useCart';
 import { AuthProvider } from './hooks/useAuth';
+
+/* Public pages — lazy loaded for code splitting */
+const Home = lazy(() => import('./pages/public/Home'));
+const Products = lazy(() => import('./pages/public/Products'));
+const ProductDetail = lazy(() => import('./pages/public/ProductDetail'));
+const Cart = lazy(() => import('./pages/public/Cart'));
+const Checkout = lazy(() => import('./pages/public/Checkout'));
+const Login = lazy(() => import('./pages/public/Login'));
+const Register = lazy(() => import('./pages/public/Register'));
+const ForgotPassword = lazy(() => import('./pages/public/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/public/ResetPassword'));
+const UserProfile = lazy(() => import('./pages/public/UserProfile'));
+const OrderHistory = lazy(() => import('./pages/public/OrderHistory'));
+const OrderSuccess = lazy(() => import('./pages/public/OrderSuccess'));
+const OrderCancel = lazy(() => import('./pages/public/OrderCancel'));
+const Favorites = lazy(() => import('./pages/public/Favorites'));
+const About = lazy(() => import('./pages/public/About'));
+const PublicCategories = lazy(() => import('./pages/public/Categories'));
+const Privacy = lazy(() => import('./pages/public/Privacy'));
+const Terms = lazy(() => import('./pages/public/Terms'));
+
+/* Admin pages — lazy loaded */
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'));
+const ProductNew = lazy(() => import('./pages/admin/ProductNew'));
+const AdminOrders = lazy(() => import('./pages/admin/Orders'));
+const OrderDetail = lazy(() => import('./pages/admin/OrderDetail'));
+const Users = lazy(() => import('./pages/admin/Users'));
+const Categories = lazy(() => import('./pages/admin/Categories'));
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+}
 
 export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,8 +64,10 @@ export default function App() {
         <CartProvider>
           <BrowserRouter>
             <NavBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <CartDrawer />
 
             <div className="pt-20 min-h-screen bg-background text-foreground transition-colors duration-300 pb-24">
+              <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<Home searchTerm={searchTerm} />} />
@@ -99,6 +107,7 @@ export default function App() {
                   <Route path="users" element={<Users />} />
                 </Route>
               </Routes>
+              </Suspense>
             </div>
 
             <FloatingDock />

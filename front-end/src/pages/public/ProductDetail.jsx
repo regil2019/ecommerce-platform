@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import useCart from "../../hooks/useCart";
 import ReviewList from "../../components/ReviewList";
 import ReviewForm from "../../components/ReviewForm";
 import FavoriteButton from "../../components/FavoriteButton";
 import SimilarProducts from "../../components/SimilarProducts";
+import RecentlyViewed from "../../components/RecentlyViewed";
 import { getProductReviews } from "../../services/reviewApi";
 import { formatCurrency } from "../../lib/utils";
-import { Star, Truck, Shield, RotateCcw, AlertCircle } from "lucide-react";
+import { Star, Truck, Shield, RotateCcw, AlertCircle, Share2, ChevronRight, Home } from "lucide-react";
 import { useI18n } from "../../i18n";
+import { useRecentlyViewed } from "../../hooks/useRecentlyViewed";
 import { StickyAddToCart } from "../../components/StickyAddToCart";
 import { RainbowButton } from "../../components/magicui/RainbowButton";
 import { Button } from "../../components/ui/Button";
@@ -28,6 +30,7 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const { addToCart } = useCart();
+  useRecentlyViewed(id);
 
   const mainButtonRef = useRef(null);
   const [showSticky, setShowSticky] = useState(false);
@@ -87,6 +90,21 @@ export default function ProductDetail() {
 
   const hasSizes = product?.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: product?.name, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success(t('product.linkCopied'));
+      }
+    } catch {
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success(t('product.linkCopied'));
+    }
+  };
+
   const handleAddToCart = () => {
     if (hasSizes && !selectedSize) {
       toast.error(t("product.sizeRequired"));
@@ -128,6 +146,24 @@ export default function ProductDetail() {
 
   return (
     <div className="mx-auto max-w-7xl p-4 lg:p-8 animate-in fade-in duration-500">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-6 flex-wrap">
+        <Link to="/" className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <Home className="h-3.5 w-3.5" />
+          {t('nav.home')}
+        </Link>
+        <ChevronRight className="h-3 w-3" />
+        {product.category && (
+          <>
+            <Link to={`/products?category=${product.category.name}`} className="hover:text-foreground transition-colors">
+              {product.category.name}
+            </Link>
+            <ChevronRight className="h-3 w-3" />
+          </>
+        )}
+        <span className="text-foreground font-medium line-clamp-1 max-w-[200px]">{product.name}</span>
+      </nav>
+
       <div className="mb-12 grid grid-cols-1 gap-12 lg:grid-cols-2">
         {/* Image Gallery */}
         <div className="space-y-4">
@@ -165,14 +201,23 @@ export default function ProductDetail() {
         {/* Product Info */}
         <div className="space-y-8">
           <div>
-            <div className="mb-4 flex items-start justify-between">
+            <div className="mb-4 flex items-start justify-between gap-2">
               <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">{product.name}</h1>
-              <FavoriteButton
-                productId={product.id}
-                initialIsFavorite={product.isFavorite}
-                size="w-10 h-10"
-                className="static bg-transparent p-0 hover:bg-transparent text-muted-foreground hover:text-red-500 transition-colors"
-              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleShare}
+                  className="p-2 rounded-xl border border-border hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                  title={t('product.shareProduct')}
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+                <FavoriteButton
+                  productId={product.id}
+                  initialIsFavorite={product.isFavorite}
+                  size="w-10 h-10"
+                  className="static bg-transparent p-0 hover:bg-transparent text-muted-foreground hover:text-red-500 transition-colors"
+                />
+              </div>
             </div>
 
             {/* Rating */}
@@ -336,6 +381,9 @@ export default function ProductDetail() {
 
       {/* Similar Products */}
       <SimilarProducts productId={id} />
+
+      {/* Recently Viewed */}
+      <RecentlyViewed excludeId={id} />
 
       {/* Reviews Section */}
       <div className="mt-16 pt-8 border-t border-border">
