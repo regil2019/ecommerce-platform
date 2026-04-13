@@ -5,6 +5,8 @@ import { Favorite } from '../models/index.js'
 import recommendationsLimiter from '../middleware/rateLimiter.js'
 import logger from '../config/logger.js'
 import cacheService from '../services/cacheService.js'
+import aiService from '../services/aiService.js'
+import behaviorService from '../services/behaviorService.js'
 import { Sequelize } from 'sequelize'
 
 const router = express.Router()
@@ -72,9 +74,12 @@ router.get('/popular', optionalAuthenticate, async (req, res) => {
 router.get('/personalized', optionalAuthenticate, recommendationsLimiter, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10
-    const cacheKey = `personalized_${limit}`
+    const hasAIEnabled = Boolean(req.user && process.env.DEEPSEEK_API_KEY)
+    const cacheKey = hasAIEnabled
+      ? `personalized_ai_${req.user.id}_${limit}`
+      : `personalized_${limit}`
     const cachedData = cacheService.get(cacheKey)
-    
+
     let recommendations
 
     if (cachedData) {
@@ -89,8 +94,32 @@ router.get('/personalized', optionalAuthenticate, recommendationsLimiter, async 
         }]
       })
 
-      const shuffled = allProducts.sort(() => 0.5 - Math.random())
-      recommendations = shuffled.slice(0, limit).map(p => p.get({ plain: true }))
+      const allProductsPlain = allProducts.map(p => p.get({ plain: true }))
+
+      if (hasAIEnabled) {
+        const userBehavior = await behaviorService.getUserBehaviorData(req.user.id)
+        const aiSuggestions = await aiService.generateProductSuggestions(userBehavior, allProductsPlain)
+
+        const suggestedIds = aiSuggestions
+          .map(item => item?.productId)
+          .filter(id => Number.isInteger(id))
+
+        const byId = new Map(allProductsPlain.map(product => [product.id, product]))
+        const aiRankedProducts = suggestedIds
+          .map(id => byId.get(id))
+          .filter(Boolean)
+
+        const aiRankedIds = new Set(aiRankedProducts.map(product => product.id))
+        const randomRemainder = allProductsPlain
+          .filter(product => !aiRankedIds.has(product.id))
+          .sort(() => 0.5 - Math.random())
+
+        recommendations = [...aiRankedProducts, ...randomRemainder].slice(0, limit)
+      } else {
+        const shuffled = [...allProductsPlain].sort(() => 0.5 - Math.random())
+        recommendations = shuffled.slice(0, limit)
+      }
+
       cacheService.set(cacheKey, recommendations)
     }
 
